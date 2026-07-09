@@ -19,6 +19,16 @@ body {
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
 }
 
+@media (max-width: 600px) {
+  .container {
+    margin: 0 auto;
+    padding: 20px 16px;
+    border-radius: 0;
+    box-shadow: none;
+    min-height: 100vh;
+  }
+}
+
 h1 {
   margin: 0 0 8px;
   font-size: 24px;
@@ -29,6 +39,17 @@ h1 {
   color: #6b7280;
   font-size: 14px;
   line-height: 1.6;
+}
+
+@media (max-width: 480px) {
+  h1 {
+    font-size: 20px;
+  }
+
+  .subtitle {
+    font-size: 13px;
+    margin-bottom: 18px;
+  }
 }
 
 #rank-form {
@@ -43,6 +64,7 @@ h1 {
   display: flex;
   flex-direction: column;
   gap: 6px;
+  flex: 1 1 140px;
 }
 
 .field label {
@@ -55,7 +77,18 @@ h1 {
   border: 1px solid #d1d5db;
   border-radius: 8px;
   font-size: 15px;
-  width: 140px;
+  width: 100%;
+}
+
+@media (max-width: 480px) {
+  #rank-form {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  #rank-form button {
+    width: 100%;
+  }
 }
 
 button {
@@ -101,6 +134,13 @@ button:disabled {
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
+}
+
+@media (max-width: 480px) {
+  .chip {
+    padding: 5px 10px;
+    font-size: 11px;
+  }
 }
 
 .chip:hover {
@@ -180,6 +220,16 @@ button:disabled {
 .rank-number {
   font-size: 28px;
   font-weight: 700;
+}
+
+@media (max-width: 480px) {
+  .rank-highlight {
+    padding: 14px 16px;
+  }
+
+  .rank-number {
+    font-size: 24px;
+  }
 }
 
 .rank-sub {
@@ -277,6 +327,18 @@ button:disabled {
   white-space: nowrap;
 }
 
+@media (max-width: 480px) {
+  .pyramid-row-label {
+    width: 78px;
+    font-size: 10px;
+  }
+
+  .pyramid-bar span {
+    font-size: 9px;
+    padding: 0 4px;
+  }
+}
+
 .pyramid-bar-track {
   flex: 1;
   display: flex;
@@ -315,11 +377,23 @@ button:disabled {
   font-weight: 700;
 }
 
+.table-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin-bottom: 20px;
+}
+
 table {
   width: 100%;
   border-collapse: collapse;
   font-size: 13px;
-  margin-bottom: 20px;
+  margin-bottom: 0;
+}
+
+@media (max-width: 480px) {
+  table {
+    min-width: 460px;
+  }
 }
 
 th, td {
