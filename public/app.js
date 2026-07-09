@@ -84,6 +84,8 @@ function renderResult(data, queryStock, queryLots) {
   document.getElementById("rank-range-high").textContent = fmt(rank.rankRangeHigh);
   document.getElementById("own-bracket").textContent = rank.ownBracketLabel;
 
+  renderPercentileGauge(rank.percentileEstimate);
+
   // Pyramid order: tip (large holders, few people) first, base (small
   // holders, many people) last. Cumulative count accumulates as you walk
   // down from the tip, so it grows layer by layer toward the base — compute
@@ -135,6 +137,17 @@ function renderResult(data, queryStock, queryLots) {
   document
     .getElementById("result-title")
     .scrollIntoView({ block: "start", behavior: "smooth" });
+}
+
+// Position on the 0%-100% spectrum reflects the real percentile, but is
+// clamped a few points in from each edge so the marker's value bubble never
+// gets clipped by the track's rounded ends for very extreme percentiles.
+function renderPercentileGauge(percentile) {
+  const marker = document.getElementById("gauge-marker");
+  const valueLabel = document.getElementById("gauge-marker-value");
+  const clampedPosition = Math.min(97, Math.max(3, percentile));
+  marker.style.left = `${clampedPosition}%`;
+  valueLabel.textContent = `前 ${percentile.toFixed(2)}%`;
 }
 
 function renderCacheNote(cache, queryStock, queryLots) {

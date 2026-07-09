@@ -40,61 +40,95 @@ function parseNumber(str) {
   return Number(String(str).replace(/,/g, "").trim());
 }
 
+const TDCC_URL = "https://www.tdcc.com.tw/portal/zh/smWeb/qryStock";
+const BROWSER_HEADERS = {
+  "User-Agent":
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+  Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+  "Accept-Language": "zh-TW,zh;q=0.9,en;q=0.8",
+};
+
+// TDCC's query form is CSRF-protected: first GET the form to obtain a
+// session cookie, a one-time SYNCHRONIZER_TOKEN, and the latest published
+// statistics date, then POST the actual query using that same session.
 async function fetchDistribution(stockCode) {
-  const url = `https://norway.twsthr.info/StockHolders.aspx?stock=${encodeURIComponent(
-    stockCode,
-  )}`;
-  const res = await axios.get(url, {
+  const formRes = await axios.get(TDCC_URL, {
+    headers: BROWSER_HEADERS,
+    timeout: 15000,
+  });
+  const cookie = (formRes.headers["set-cookie"] || [])
+    .map((c) => c.split(";")[0])
+    .join("; ");
+  const $form = cheerio.load(formRes.data);
+  const token = $form("#SYNCHRONIZER_TOKEN").attr("value");
+  const uri = $form("#SYNCHRONIZER_URI").attr("value");
+  const scaDate = $form("#scaDate option").first().attr("value");
+  if (!token || !scaDate) {
+    throw new Error("無法連線至集保結算所查詢系統，請稍後再試");
+  }
+
+  const params = new URLSearchParams({
+    SYNCHRONIZER_TOKEN: token,
+    SYNCHRONIZER_URI: uri,
+    method: "submit",
+    firDate: scaDate,
+    scaDate,
+    sqlMethod: "StockNo",
+    stockNo: stockCode,
+    stockName: "",
+  });
+
+  const res = await axios.post(TDCC_URL, params.toString(), {
     headers: {
-      "User-Agent":
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
-      Accept:
-        "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
-      "Accept-Language": "zh-TW,zh;q=0.9,en;q=0.8",
-      Referer: "https://norway.twsthr.info/",
+      ...BROWSER_HEADERS,
+      "Content-Type": "application/x-www-form-urlencoded",
+      Cookie: cookie,
+      Referer: TDCC_URL,
     },
     timeout: 15000,
   });
   const $ = cheerio.load(res.data);
 
-  const table = $("#details");
-  if (table.length === 0) {
+  const table = $("table.table");
+  if (table.length === 0 || table.text().includes("查無此資料")) {
     throw new Error("找不到股權分散表，請確認股票代號是否正確");
   }
-
-  // Header row holds the 3 statistics dates (most recent first)
-  const dateHeader = table.find("thead tr").eq(1);
-  const statDate = dateHeader
-    .find("th")
-    .eq(1)
-    .text()
-    .trim()
-    .replace(/(\d{4})(\d{2})(\d{2})/, "$1-$2-$3");
 
   const brackets = [];
   let total = null;
 
-  table.find("tbody tr").each((_, row) => {
+  // TDCC reports each bracket in 股 (shares), numbered 序 1-15 in the same
+  // order as BRACKET_ORDER, followed by a "差異數調整" rounding row and a
+  // "合計" total row. Convert shares -> 張 (lots) to match the existing
+  // bracket/rank display, and reuse BRACKET_ORDER's friendlier labels.
+  table.find("tr").each((_, row) => {
     const tds = $(row).find("td");
-    if (tds.length < 5) return; // spacer/blank rows
+    if (tds.length < 5) return; // header/spacer rows
+    const seq = Number($(tds[0]).text().trim());
     const label = $(tds[1]).text().trim();
-    if (!label || label.startsWith("*")) return; // skip cumulative "X張以上" summary rows
-
     const count = parseNumber($(tds[2]).text());
-    const lots = parseNumber($(tds[3]).text());
+    const shares = parseNumber($(tds[3]).text());
     const pct = parseNumber($(tds[4]).text());
-    if (Number.isNaN(count)) return;
 
-    if (label === "合計") {
-      total = { count, lots, pct };
+    if (label.startsWith("合")) {
+      total = { count, lots: Math.round(shares / 1000), pct };
       return;
     }
-    brackets.push({ label, count, lots, pct });
+    if (!Number.isInteger(seq) || seq < 1 || seq > BRACKET_ORDER.length) return;
+
+    brackets[seq - 1] = {
+      label: BRACKET_ORDER[seq - 1].label,
+      count,
+      lots: Math.round(shares / 1000),
+      pct,
+    };
   });
 
-  if (!total || brackets.length === 0) {
+  if (!total || brackets.length !== BRACKET_ORDER.length || brackets.includes(undefined)) {
     throw new Error("解析股權分散表失敗");
   }
+
+  const statDate = `${scaDate.slice(0, 4)}-${scaDate.slice(4, 6)}-${scaDate.slice(6, 8)}`;
 
   return { statDate, brackets, total };
 }
