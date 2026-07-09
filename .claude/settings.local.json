@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl -s -A \"Mozilla/5.0\" \"https://norway.twsthr.info/StockHolders.aspx?stock=0050\" -o /tmp/holder.html --max-time 15 -w \"HTTP:%{http_code}\\\\n\")",
+      "Read(//tmp/**)",
+      "Bash(node *)",
+      "Bash(curl -s \"http://localhost:3000/api/rank?stock=0050&lots=2\")",
+      "Bash(curl -s \"http://localhost:3000/api/rank?stock=0050&lots=5\")",
+      "Bash(pkill -f \"node server.js\")",
+      "Bash(curl -s -A \"Mozilla/5.0\" \"https://norway.twsthr.info/StockHolders.aspx?stock=0050\" -o /tmp/holder2.html --max-time 15 -w \"HTTP:%{http_code}\\\\n\")",
+      "Bash(curl -s -A \"Mozilla/5.0\" \"https://norway.twsthr.info/StockHolders.aspx?stock=2330\" -o /tmp/holder2330.html --max-time 15 -w \"HTTP:%{http_code}\\\\n\")"
+    ]
+  }
+}
