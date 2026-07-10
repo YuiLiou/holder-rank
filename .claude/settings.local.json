@@ -13,7 +13,10 @@
       "Bash(curl -s -o /dev/null -w \"HTTP:%{http_code} time:%{time_total}s\\\\n\" \"https://holder-rank.onrender.com/\")",
       "Bash(curl -s -w \"\\\\nHTTP:%{http_code}\\\\n\" \"https://holder-rank.onrender.com/api/rank?stock=0050&lots=8\" --max-time 60)",
       "Bash(curl *)",
-      "Bash(python3 *)"
+      "Bash(python3 *)",
+      "Bash(mkdir -p /private/tmp/claude-501/-Users-rusiang-Public-Project-holder-rank/c10d031e-a902-4b70-9f57-60aa6931b97d/scratchpad)",
+      "Bash(npm init *)",
+      "Bash(npm install *)"
     ]
   }
 }

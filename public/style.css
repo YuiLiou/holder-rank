@@ -165,7 +165,7 @@ button:disabled {
 }
 
 .hidden {
-  display: none;
+  display: none !important;
 }
 
 #result h2 {
@@ -303,6 +303,44 @@ button:disabled {
   font-size: 14px;
   color: #4b5563;
   margin: 0 0 10px;
+}
+
+.cheer-box {
+  margin: 0 0 18px;
+  padding: 16px 20px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #fef3c7, #fde68a);
+  border: 1px solid #fcd34d;
+}
+
+.cheer-line {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.cheer-text {
+  font-weight: 700;
+  color: #78350f;
+}
+
+@media (max-width: 480px) {
+  .cheer-box {
+    padding: 12px 14px;
+  }
+
+  .cheer-line {
+    font-size: 13px;
+  }
+}
+
+.pyramid-quote {
+  margin: 0 0 14px;
+  font-size: 14px;
+  font-style: italic;
+  font-weight: 500;
+  color: #92400e;
+  text-align: center;
 }
 
 .pyramid-chart {
