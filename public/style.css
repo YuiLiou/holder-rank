@@ -170,7 +170,7 @@ button:disabled {
 
 #result h2 {
   font-size: 18px;
-  margin: 24px 0 4px;
+  margin: 20px 0 4px;
 }
 
 .quote-line {
@@ -423,10 +423,37 @@ button:disabled {
   margin: 8px 0 20px;
 }
 
-.section-title {
-  font-size: 14px;
-  color: #4b5563;
-  margin: 0 0 10px;
+/* The result panel is split into three labelled parts — 問題 / 評價 / 金字塔 —
+   each introduced by a numbered head. Sections 2 and 3 carry a top divider so
+   the boundary is obvious; the first section sits directly under the query
+   echo (result-header) without one. */
+.result-section {
+  margin-top: 24px;
+  padding-top: 22px;
+  border-top: 1px solid #eef1f5;
+}
+
+.result-section:first-of-type {
+  margin-top: 10px;
+  padding-top: 0;
+  border-top: none;
+}
+
+/* Neutralise the trailing margin the last inner element carries, so the gap
+   before the next section's divider stays even across all three. */
+.result-section > :last-child {
+  margin-bottom: 0;
+}
+
+.section-head {
+  margin-bottom: 14px;
+}
+
+.section-heading {
+  font-size: 16px;
+  margin: 0;
+  color: #111827;
+  font-weight: 700;
 }
 
 .pyramid-chart {
@@ -572,5 +599,8 @@ tr.total-row td {
   font-size: 12px;
   color: #6b7280;
   line-height: 1.8;
+  margin-top: 26px;
+  padding-top: 20px;
   padding-left: 18px;
+  border-top: 1px solid #eef1f5;
 }

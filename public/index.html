@@ -64,71 +64,90 @@
     <div id="status"></div>
 
     <div id="result" class="{{RESULT_HIDDEN_CLASS}}">
-      <h2 id="result-title">{{RESULT_TITLE}}</h2>
-      <p class="quote-line" id="quote-line">{{QUOTE_LINE}}</p>
-      <p class="cache-note" id="cache-note">{{CACHE_NOTE}}</p>
-
-      <div class="rank-card">
-        <div class="rank-highlight">
-          <span class="rank-label">估計名次</span>
-          <span id="rank-point" class="rank-number">{{RANK_POINT}}</span>
-          <span class="rank-sub">/ 全體約 <span id="rank-total">{{RANK_TOTAL}}</span> 位股東</span>
-        </div>
-        <div class="rank-highlight">
-          <span class="rank-label">估計百分位</span>
-          <span id="rank-percentile" class="rank-number">{{RANK_PERCENTILE}}</span>
-        </div>
+      <div class="result-header">
+        <h2 id="result-title">{{RESULT_TITLE}}</h2>
+        <p class="quote-line" id="quote-line">{{QUOTE_LINE}}</p>
+        <p class="cache-note" id="cache-note">{{CACHE_NOTE}}</p>
       </div>
 
-      <div class="percentile-gauge">
-        <div class="gauge-labels">
-          <span>大戶（0%）</span>
-          <span>散戶（100%）</span>
+      <section class="result-section">
+        <div class="section-head">
+          <h3 class="section-heading">你的持股排名</h3>
         </div>
-        <div class="gauge-track" id="gauge-track">
-          <div class="gauge-marker" id="gauge-marker" style="left: {{GAUGE_LEFT}}%">
-            <span class="gauge-marker-value" id="gauge-marker-value">{{GAUGE_VALUE}}</span>
+
+        <div class="rank-card">
+          <div class="rank-highlight">
+            <span class="rank-label">估計名次</span>
+            <span id="rank-point" class="rank-number">{{RANK_POINT}}</span>
+            <span class="rank-sub">/ 全體約 <span id="rank-total">{{RANK_TOTAL}}</span> 位股東</span>
+          </div>
+          <div class="rank-highlight">
+            <span class="rank-label">估計百分位</span>
+            <span id="rank-percentile" class="rank-number">{{RANK_PERCENTILE}}</span>
           </div>
         </div>
-      </div>
 
-      <div class="tier-card tier-card--{{TIER_TONE}}" id="tier-card">
-        <div class="tier-card-top">
-          <span class="tier-eyebrow">持股等級評定</span>
-          <span class="tier-grade" id="tier-grade">{{TIER_GRADE}}</span>
+        <div class="percentile-gauge">
+          <div class="gauge-labels">
+            <span>大戶（0%）</span>
+            <span>散戶（100%）</span>
+          </div>
+          <div class="gauge-track" id="gauge-track">
+            <div class="gauge-marker" id="gauge-marker" style="left: {{GAUGE_LEFT}}%">
+              <span class="gauge-marker-value" id="gauge-marker-value">{{GAUGE_VALUE}}</span>
+            </div>
+          </div>
         </div>
-        <div class="tier-name" id="tier-name">{{TIER_TITLE}}</div>
-        <div class="tier-beat" id="tier-beat">{{TIER_BEAT}}</div>
-        <p class="tier-eval" id="tier-eval">{{TIER_EVALUATION}}</p>
-        <p class="tier-cheer" id="tier-cheer">{{TIER_ENCOURAGEMENT}}</p>
-        <p class="tier-quote" id="tier-quote">{{TIER_QUOTE}}</p>
-      </div>
 
-      <p class="rank-range">
-        名次估計採級距內插法計算；若只看級距邊界（不做內插），理論範圍為第
-        <span id="rank-range-low">{{RANK_RANGE_LOW}}</span> 名 ～ 第
-        <span id="rank-range-high">{{RANK_RANGE_HIGH}}</span> 名
-        （落於「<span id="own-bracket">{{OWN_BRACKET}}</span>」級距）
-      </p>
+        <p class="rank-range">
+          名次估計採級距內插法計算；若只看級距邊界（不做內插），理論範圍為第
+          <span id="rank-range-low">{{RANK_RANGE_LOW}}</span> 名 ～ 第
+          <span id="rank-range-high">{{RANK_RANGE_HIGH}}</span> 名
+          （落於「<span id="own-bracket">{{OWN_BRACKET}}</span>」級距）
+        </p>
+      </section>
 
-      <h3 class="section-title">持股金字塔</h3>
-      <div id="pyramid-chart" class="pyramid-chart">{{PYRAMID_CHART}}</div>
+      <section class="result-section">
+        <div class="section-head">
+          <h3 class="section-heading">持股等級評定</h3>
+        </div>
 
-      <div class="table-scroll">
-        <table id="bracket-table">
-          <thead>
-            <tr>
-              <th>持股級距</th>
-              <th>人數</th>
-              <th>累計人數</th>
-              <th>張數</th>
-              <th>佔比%</th>
-            </tr>
-          </thead>
-          <tbody>{{BRACKET_ROWS}}</tbody>
-          <tfoot>{{TOTAL_ROW}}</tfoot>
-        </table>
-      </div>
+        <div class="tier-card tier-card--{{TIER_TONE}}" id="tier-card">
+          <div class="tier-card-top">
+            <span class="tier-eyebrow">評級</span>
+            <span class="tier-grade" id="tier-grade">{{TIER_GRADE}}</span>
+          </div>
+          <div class="tier-name" id="tier-name">{{TIER_TITLE}}</div>
+          <div class="tier-beat" id="tier-beat">{{TIER_BEAT}}</div>
+          <p class="tier-eval" id="tier-eval">{{TIER_EVALUATION}}</p>
+          <p class="tier-cheer" id="tier-cheer">{{TIER_ENCOURAGEMENT}}</p>
+          <p class="tier-quote" id="tier-quote">{{TIER_QUOTE}}</p>
+        </div>
+      </section>
+
+      <section class="result-section">
+        <div class="section-head">
+          <h3 class="section-heading">全體股東持股金字塔</h3>
+        </div>
+
+        <div id="pyramid-chart" class="pyramid-chart">{{PYRAMID_CHART}}</div>
+
+        <div class="table-scroll">
+          <table id="bracket-table">
+            <thead>
+              <tr>
+                <th>持股級距</th>
+                <th>人數</th>
+                <th>累計人數</th>
+                <th>張數</th>
+                <th>佔比%</th>
+              </tr>
+            </thead>
+            <tbody>{{BRACKET_ROWS}}</tbody>
+            <tfoot>{{TOTAL_ROW}}</tfoot>
+          </table>
+        </div>
+      </section>
 
       <ul class="caveats">
         <li>排名僅相對於「該檔股票的股東母體」，非全台灣人口。</li>
