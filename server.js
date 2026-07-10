@@ -140,6 +140,51 @@ async function fetchDistribution(stockCode) {
   return { statDate, brackets, total };
 }
 
+const TWSE_QUOTE_URL = "https://mis.twse.com.tw/stock/api/getStockInfo.jsp";
+
+// TWSE's own realtime-quote widget hits this undocumented endpoint. Querying
+// both the tse_ (上市) and otc_ (上櫃) prefix for the same code in one call
+// and keeping whichever side actually has data auto-detects the market
+// without us needing to know it ahead of time.
+async function fetchQuote(stockCode) {
+  const res = await axios.get(TWSE_QUOTE_URL, {
+    params: { ex_ch: `tse_${stockCode}.tw|otc_${stockCode}.tw`, json: 1 },
+    headers: BROWSER_HEADERS,
+    timeout: 10000,
+  });
+  const entries = (res.data && res.data.msgArray) || [];
+  const match = entries.find((e) => e.z && e.z !== "-");
+  if (!match) return null;
+
+  const price = Number(match.z);
+  const prevClose = Number(match.y);
+  if (!Number.isFinite(price)) return null;
+
+  const change = Number.isFinite(prevClose) ? price - prevClose : null;
+  const changePct = change !== null && prevClose ? (change / prevClose) * 100 : null;
+
+  return {
+    name: match.n || null,
+    market: match.ex || null,
+    price,
+    prevClose: Number.isFinite(prevClose) ? prevClose : null,
+    change,
+    changePct,
+    time: match.t || null,
+  };
+}
+
+// Price is a nice-to-have on top of the rank estimate, not core to it — a
+// flaky quote endpoint shouldn't take down the whole /api/rank response.
+async function getQuoteSafe(stockCode) {
+  try {
+    return await fetchQuote(stockCode);
+  } catch (err) {
+    console.error(`quote fetch failed for ${stockCode}:`, err.message);
+    return null;
+  }
+}
+
 async function getDistribution(stockCode, forceRefresh) {
   const cached = distributionCache.get(stockCode);
   const isFresh = cached && Date.now() - cached.fetchedAt < CACHE_TTL_MS;
@@ -218,6 +263,35 @@ function fmt(n) {
   return Number(n).toLocaleString("zh-TW");
 }
 
+// Mirrors public/app.js's formatQuoteLineHtml(): builds the "現價 ... ｜持股
+// 市值約 ..." line as an HTML string so the same markup can be dropped into
+// the SSR template here and into innerHTML client-side. Keep in sync if the
+// rendering logic changes.
+function formatQuoteLineHtml(quote, lots) {
+  if (!quote) return "";
+  const { price, change, changePct, time } = quote;
+  const holdingValue = Math.round(lots * 1000 * price);
+
+  let arrow = "—";
+  let cls = "quote-flat";
+  if (change > 0) {
+    arrow = "▲";
+    cls = "quote-up";
+  } else if (change < 0) {
+    arrow = "▼";
+    cls = "quote-down";
+  }
+  const changeText =
+    change !== null && changePct !== null
+      ? `${arrow}${Math.abs(change).toFixed(2)}（${change >= 0 ? "+" : "-"}${Math.abs(changePct).toFixed(2)}%）`
+      : "";
+
+  return (
+    `現價 ${price.toFixed(2)} <span class="${cls}">${changeText}</span>` +
+    `｜持股市值約 NT$ ${fmt(holdingValue)}${time ? `（${time}）` : ""}`
+  );
+}
+
 // Mirrors public/app.js's renderPyramidChart(): bars are sized by each
 // bracket's CUMULATIVE count (tip -> base) on a log scale, since raw counts
 // span a few hundred to a few million. Keep in sync with the client version
@@ -287,6 +361,7 @@ function buildResultFragments(data) {
     return {
       RESULT_HIDDEN_CLASS: "hidden",
       RESULT_TITLE: "",
+      QUOTE_LINE: "",
       CACHE_NOTE: "",
       CHEER_ENCOURAGEMENT: "",
       RANK_POINT: "",
@@ -304,7 +379,7 @@ function buildResultFragments(data) {
     };
   }
 
-  const { stock, lots, statDate, brackets, total, rank } = data;
+  const { stock, lots, statDate, brackets, total, rank, quote } = data;
 
   let runningTotal = 0;
   const pyramid = [...brackets].reverse().map((b) => {
@@ -323,6 +398,7 @@ function buildResultFragments(data) {
   return {
     RESULT_HIDDEN_CLASS: "",
     RESULT_TITLE: `範例：${stock}｜持有 ${fmt(lots)} 張（統計日期：${statDate}）`,
+    QUOTE_LINE: formatQuoteLineHtml(quote, lots),
     CACHE_NOTE: "資料為即時抓取",
     CHEER_ENCOURAGEMENT: "你已經很棒了，繼續前進！",
     RANK_POINT: `第 ${fmt(rank.rankEstimate)} 名`,
@@ -356,10 +432,10 @@ function renderIndexHtml(data) {
 // so the page still loads even when the upstream data source is down.
 app.get(["/", "/index.html"], async (req, res) => {
   try {
-    const { statDate, brackets, total } = await getDistribution(
-      DEFAULT_EXAMPLE.stock,
-      false,
-    );
+    const [{ statDate, brackets, total }, quote] = await Promise.all([
+      getDistribution(DEFAULT_EXAMPLE.stock, false),
+      getQuoteSafe(DEFAULT_EXAMPLE.stock),
+    ]);
     const rank = estimateRank(brackets, total, DEFAULT_EXAMPLE.lots);
     const html = renderIndexHtml({
       stock: DEFAULT_EXAMPLE.stock,
@@ -368,6 +444,7 @@ app.get(["/", "/index.html"], async (req, res) => {
       brackets,
       total,
       rank,
+      quote,
     });
     res.type("html").send(html);
   } catch (err) {
@@ -391,8 +468,10 @@ app.get("/api/rank", async (req, res) => {
       return res.status(400).json({ error: "請提供有效的持股張數" });
     }
 
-    const { statDate, brackets, total, fromCache, cachedAt } =
-      await getDistribution(stock, forceRefresh);
+    const [{ statDate, brackets, total, fromCache, cachedAt }, quote] = await Promise.all([
+      getDistribution(stock, forceRefresh),
+      getQuoteSafe(stock),
+    ]);
     const rank = estimateRank(brackets, total, lots);
 
     res.json({
@@ -402,6 +481,7 @@ app.get("/api/rank", async (req, res) => {
       brackets,
       total,
       rank,
+      quote,
       cache: { fromCache, cachedAt, ttlMs: CACHE_TTL_MS },
     });
   } catch (err) {

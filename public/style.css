@@ -173,6 +173,29 @@ button:disabled {
   margin: 24px 0 4px;
 }
 
+.quote-line {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0 0 8px;
+}
+
+.quote-line:empty {
+  display: none;
+}
+
+.quote-up {
+  color: #dc2626;
+}
+
+.quote-down {
+  color: #16a34a;
+}
+
+.quote-flat {
+  color: #6b7280;
+}
+
 .cache-note {
   font-size: 12px;
   color: #9ca3af;

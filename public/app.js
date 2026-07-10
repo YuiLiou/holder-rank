@@ -11,6 +11,33 @@ function fmtPct(n) {
   return `${n.toFixed(2)}%`;
 }
 
+// Mirrors server.js's formatQuoteLineHtml(). Keep in sync if the rendering
+// logic changes — server.js uses the same markup for the SSR homepage.
+function formatQuoteLineHtml(quote, lots) {
+  if (!quote) return "";
+  const { price, change, changePct, time } = quote;
+  const holdingValue = Math.round(lots * 1000 * price);
+
+  let arrow = "—";
+  let cls = "quote-flat";
+  if (change > 0) {
+    arrow = "▲";
+    cls = "quote-up";
+  } else if (change < 0) {
+    arrow = "▼";
+    cls = "quote-down";
+  }
+  const changeText =
+    change !== null && changePct !== null
+      ? `${arrow}${Math.abs(change).toFixed(2)}（${change >= 0 ? "+" : "-"}${Math.abs(changePct).toFixed(2)}%）`
+      : "";
+
+  return (
+    `現價 ${price.toFixed(2)} <span class="${cls}">${changeText}</span>` +
+    `｜持股市值約 NT$ ${fmt(holdingValue)}${time ? `（${time}）` : ""}`
+  );
+}
+
 const stockInput = document.getElementById("stock");
 const quickStocksEl = document.getElementById("quick-stocks");
 
@@ -70,13 +97,15 @@ form.addEventListener("submit", (e) => {
 let lastResultData = null;
 
 function renderResult(data, queryStock, queryLots) {
-  const { stock, lots, statDate, brackets, total, rank, cache } = data;
+  const { stock, lots, statDate, brackets, total, rank, cache, quote } = data;
 
   lastResultData = data;
   renderCheerBox();
 
   document.getElementById("result-title").textContent =
     `${stock}｜持有 ${fmt(lots)} 張（統計日期：${statDate}）`;
+
+  document.getElementById("quote-line").innerHTML = formatQuoteLineHtml(quote, lots);
 
   renderCacheNote(cache, queryStock, queryLots);
 
