@@ -286,6 +286,39 @@ function estimateRank(brackets, total, userLots) {
   };
 }
 
+// Inverse of estimateRank: given a target percentile, find the minimum lots
+// that achieves it. estimateRank's percentileEstimate is monotonically
+// non-increasing in lots (more lots -> better rank — verified by the
+// "larger holdings never rank worse" test), so binary search over lots
+// converges reliably without needing to re-derive a closed-form inverse of
+// the piecewise linear-interpolation / Pareto-tail formula.
+function findLotsForPercentile(brackets, total, targetPercentile, startLots) {
+  const percentileAt = (lots) => estimateRank(brackets, total, lots).percentileEstimate;
+  if (percentileAt(startLots) < targetPercentile) return startLots;
+
+  // Can't realistically hold more lots than the stock's total outstanding
+  // lots — use that as the search ceiling so an unreachable target (e.g.
+  // the stock has too few large holders left to climb past) terminates
+  // instead of doubling forever.
+  const CEILING = total.lots;
+  let lo = startLots;
+  let hi = startLots;
+  while (percentileAt(hi) >= targetPercentile) {
+    if (hi >= CEILING) return null;
+    hi = Math.min(CEILING, hi * 2);
+  }
+
+  for (let i = 0; i < 60; i++) {
+    const mid = (lo + hi) / 2;
+    if (percentileAt(mid) < targetPercentile) {
+      hi = mid;
+    } else {
+      lo = mid;
+    }
+  }
+  return hi;
+}
+
 function fmt(n) {
   return Number(n).toLocaleString("zh-TW");
 }
@@ -379,6 +412,19 @@ function renderBracketTableHtml(pyramid, total, runningTotal, ownBracketLabel) {
   return { rows, totalRow };
 }
 
+// Mirrors public/app.js's formatTierUpgradeHtml(): pure rendering of the
+// numbers computeTierUpgrade() already worked out. Keep in sync if the
+// markup changes.
+function formatTierUpgradeHtml(upgrade) {
+  if (!upgrade) return "";
+  const { nextGrade, nextTitle, extraLots, extraCost } = upgrade;
+  const costText = extraCost !== null ? `（約 NT$ ${fmt(extraCost)}）` : "";
+  return (
+    `再買 <strong>${fmt(extraLots)} 張</strong>${costText}` +
+    `即可升級為 <strong>${nextGrade} ${nextTitle}</strong>`
+  );
+}
+
 // Mirrors public/app.js's SHAREHOLDER_TIERS / getTier(): after showing the
 // computed rank/percentile, place the user into a graded tier with an
 // evaluation, encouragement, and a fitting master quote. percentile = 前 X%;
@@ -441,6 +487,33 @@ function getTier(percentile) {
   );
 }
 
+// "Buy N more lots to reach the next tier" — computed server-side (not
+// mirrored in app.js like the rendering-only helpers below) because it
+// needs findLotsForPercentile's search over estimateRank, and duplicating
+// that bracket math client-side would risk it silently drifting from the
+// real ranking logic. The client just displays the resulting numbers.
+function computeTierUpgrade(brackets, total, lots, rank, quote) {
+  const tierIndex = SHAREHOLDER_TIERS.indexOf(getTier(rank.percentileEstimate));
+  if (tierIndex <= 0) return null; // already at the top tier (S+)
+
+  const nextTier = SHAREHOLDER_TIERS[tierIndex - 1];
+  const requiredLots = findLotsForPercentile(brackets, total, nextTier.max, lots);
+  if (requiredLots === null) return null;
+
+  // Round UP to the nearest 0.1 lot: since percentile is non-increasing in
+  // lots, rounding up only makes the target easier to hit, so the displayed
+  // number is always guaranteed sufficient (never displays "buy 0 more").
+  const extraLots = Math.max(0.1, Math.ceil((requiredLots - lots) * 10) / 10);
+  const extraCost = quote ? Math.round(extraLots * 1000 * quote.price) : null;
+
+  return {
+    nextGrade: nextTier.grade,
+    nextTitle: nextTier.title,
+    extraLots,
+    extraCost,
+  };
+}
+
 // Builds the token -> replacement map for the homepage template. `data` is
 // the same shape returned by GET /api/rank, or null to render the empty
 // (JS-populated-on-query) state — used as a fallback if the example query
@@ -467,13 +540,14 @@ function buildResultFragments(data) {
       TIER_EVALUATION: "",
       TIER_ENCOURAGEMENT: "",
       TIER_QUOTE: "",
+      TIER_UPGRADE_HTML: "",
       PYRAMID_CHART: "",
       BRACKET_ROWS: "",
       TOTAL_ROW: "",
     };
   }
 
-  const { stock, lots, statDate, brackets, total, rank, quote } = data;
+  const { stock, lots, statDate, brackets, total, rank, quote, upgrade } = data;
 
   let runningTotal = 0;
   const pyramid = [...brackets].reverse().map((b) => {
@@ -511,6 +585,7 @@ function buildResultFragments(data) {
     TIER_EVALUATION: tier.evaluation,
     TIER_ENCOURAGEMENT: tier.encouragement,
     TIER_QUOTE: `「${tier.quote}」－ ${tier.author}`,
+    TIER_UPGRADE_HTML: formatTierUpgradeHtml(upgrade),
     PYRAMID_CHART: renderPyramidChartHtml(pyramid, rank.ownBracketLabel),
     BRACKET_ROWS: rows,
     TOTAL_ROW: totalRow,
@@ -574,6 +649,7 @@ app.get(["/", "/index.html"], async (req, res) => {
       getQuoteSafe(DEFAULT_EXAMPLE.stock),
     ]);
     const rank = estimateRank(brackets, total, DEFAULT_EXAMPLE.lots);
+    const upgrade = computeTierUpgrade(brackets, total, DEFAULT_EXAMPLE.lots, rank, quote);
     const html = renderIndexHtml({
       stock: DEFAULT_EXAMPLE.stock,
       lots: DEFAULT_EXAMPLE.lots,
@@ -582,6 +658,7 @@ app.get(["/", "/index.html"], async (req, res) => {
       total,
       rank,
       quote,
+      upgrade,
     });
     res.type("html").send(html);
   } catch (err) {
@@ -610,6 +687,7 @@ app.get("/api/rank", rateLimit, async (req, res) => {
       getQuoteSafe(stock),
     ]);
     const rank = estimateRank(brackets, total, lots);
+    const upgrade = computeTierUpgrade(brackets, total, lots, rank, quote);
 
     res.json({
       stock,
@@ -619,6 +697,7 @@ app.get("/api/rank", rateLimit, async (req, res) => {
       total,
       rank,
       quote,
+      upgrade,
       cache: { fromCache, cachedAt, ttlMs: CACHE_TTL_MS },
     });
   } catch (err) {
@@ -659,4 +738,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { estimateRank, BRACKET_ORDER };
+module.exports = { estimateRank, BRACKET_ORDER, computeTierUpgrade, getTier };

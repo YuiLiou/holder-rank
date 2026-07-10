@@ -1,6 +1,6 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { estimateRank } = require("../server.js");
+const { estimateRank, computeTierUpgrade, getTier } = require("../server.js");
 
 // Real 0050 distribution snapshot (statDate 2026-07-03) — used as a fixed
 // fixture so these tests don't depend on network access or on TDCC's data
@@ -69,4 +69,47 @@ test("larger holdings never rank worse than smaller holdings", () => {
     assert.ok(rank <= prevRank, `lots=${lots}: rank ${rank} should be <= previous ${prevRank}`);
     prevRank = rank;
   }
+});
+
+test("computeTierUpgrade returns null once already at the top tier (S+)", () => {
+  const rank = estimateRank(FIXTURE_BRACKETS, FIXTURE_TOTAL, 5000);
+  assert.equal(getTier(rank.percentileEstimate).grade, "S+");
+  const upgrade = computeTierUpgrade(FIXTURE_BRACKETS, FIXTURE_TOTAL, 5000, rank, null);
+  assert.equal(upgrade, null);
+});
+
+test("computeTierUpgrade's suggested extra lots actually cross into the next tier", () => {
+  for (const lots of [1, 5, 10, 20, 50, 200, 800]) {
+    const rank = estimateRank(FIXTURE_BRACKETS, FIXTURE_TOTAL, lots);
+    const currentTier = getTier(rank.percentileEstimate);
+    const upgrade = computeTierUpgrade(FIXTURE_BRACKETS, FIXTURE_TOTAL, lots, rank, null);
+    if (!upgrade) continue; // already at the top tier
+
+    const upgradedRank = estimateRank(FIXTURE_BRACKETS, FIXTURE_TOTAL, lots + upgrade.extraLots);
+    const upgradedTier = getTier(upgradedRank.percentileEstimate);
+    assert.equal(
+      upgradedTier.grade,
+      upgrade.nextGrade,
+      `lots=${lots}: buying ${upgrade.extraLots} more should land in tier ${upgrade.nextGrade}, got ${upgradedTier.grade}`,
+    );
+    assert.notEqual(upgradedTier.grade, currentTier.grade);
+  }
+});
+
+test("computeTierUpgrade's extra lots is the rounded-up minimum (one tick less falls short)", () => {
+  const lots = 20;
+  const rank = estimateRank(FIXTURE_BRACKETS, FIXTURE_TOTAL, lots);
+  const upgrade = computeTierUpgrade(FIXTURE_BRACKETS, FIXTURE_TOTAL, lots, rank, null);
+  assert.ok(upgrade, "expected an upgrade to be available at 20張 for the 0050 fixture");
+
+  const oneTickLess = Math.max(0, upgrade.extraLots - 0.1);
+  const shortRank = estimateRank(FIXTURE_BRACKETS, FIXTURE_TOTAL, lots + oneTickLess);
+  assert.notEqual(getTier(shortRank.percentileEstimate).grade, upgrade.nextGrade);
+});
+
+test("computeTierUpgrade includes an NT$ cost estimate when a quote is available", () => {
+  const lots = 20;
+  const rank = estimateRank(FIXTURE_BRACKETS, FIXTURE_TOTAL, lots);
+  const upgrade = computeTierUpgrade(FIXTURE_BRACKETS, FIXTURE_TOTAL, lots, rank, { price: 190 });
+  assert.equal(upgrade.extraCost, Math.round(upgrade.extraLots * 1000 * 190));
 });

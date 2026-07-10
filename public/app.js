@@ -97,7 +97,7 @@ form.addEventListener("submit", (e) => {
 let lastResultData = null;
 
 function renderResult(data, queryStock, queryLots) {
-  const { stock, lots, statDate, brackets, total, rank, cache, quote } = data;
+  const { stock, lots, statDate, brackets, total, rank, cache, quote, upgrade } = data;
 
   lastResultData = data;
 
@@ -118,7 +118,7 @@ function renderResult(data, queryStock, queryLots) {
   document.getElementById("own-bracket").textContent = rank.ownBracketLabel;
 
   renderPercentileGauge(rank.percentileEstimate);
-  renderTierCard(rank);
+  renderTierCard(rank, upgrade);
 
   // Pyramid order: tip (large holders, few people) first, base (small
   // holders, many people) last. Cumulative count accumulates as you walk
@@ -248,7 +248,23 @@ function getTier(percentile) {
   );
 }
 
-function renderTierCard(rank) {
+// Mirrors server.js's formatTierUpgradeHtml(): pure rendering of the
+// numbers server.js's computeTierUpgrade() already worked out (sent as
+// `upgrade` in the /api/rank response). Re-deriving extraLots/extraCost
+// here would mean duplicating estimateRank's full bracket-search logic in
+// the browser just to render one line, so the server does that math once
+// and the client only displays it. Keep the markup in sync with server.js.
+function formatTierUpgradeHtml(upgrade) {
+  if (!upgrade) return "";
+  const { nextGrade, nextTitle, extraLots, extraCost } = upgrade;
+  const costText = extraCost !== null ? `（約 NT$ ${fmt(extraCost)}）` : "";
+  return (
+    `再買 <strong>${fmt(extraLots)} 張</strong>${costText}` +
+    `即可升級為 <strong>${nextGrade} ${nextTitle}</strong>`
+  );
+}
+
+function renderTierCard(rank, upgrade) {
   const tier = getTier(rank.percentileEstimate);
   const beatPct = Math.max(0, 100 - rank.percentileEstimate);
 
@@ -262,6 +278,7 @@ function renderTierCard(rank) {
   document.getElementById("tier-cheer").textContent = tier.encouragement;
   document.getElementById("tier-quote").textContent =
     `「${tier.quote}」－ ${tier.author}`;
+  document.getElementById("tier-upgrade").innerHTML = formatTierUpgradeHtml(upgrade);
 }
 
 function renderCacheNote(cache, queryStock, queryLots) {

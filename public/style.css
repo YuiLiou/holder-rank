@@ -403,6 +403,27 @@ button:disabled {
   opacity: 0.9;
 }
 
+/* "Buy N more lots to reach the next tier" banner. Empty (no upgrade
+   available, e.g. already S+) collapses to nothing rather than leaving a
+   blank gap — the SSR/client renderers both just leave it empty in that
+   case instead of toggling a hidden class. */
+.tier-upgrade {
+  margin-top: 14px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.16);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.tier-upgrade:empty {
+  display: none;
+}
+
+.tier-upgrade strong {
+  font-weight: 800;
+}
+
 @media (max-width: 480px) {
   .tier-card {
     padding: 16px 16px;
