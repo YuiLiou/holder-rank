@@ -352,6 +352,47 @@ function renderBracketTableHtml(pyramid, total, runningTotal, ownBracketLabel) {
   return { rows, totalRow };
 }
 
+// Mirrors public/app.js's VALUE_TIP_TIERS / getValueTip(): long-term/value-
+// investing framing tied to the user's actual percentile, not random
+// encouragement. Keep both copies in sync if the tiers change.
+const VALUE_TIP_TIERS = [
+  {
+    max: 1,
+    badge: "頂層股東",
+    message:
+      "你已經站在多數人看不到的位置。大戶的功課不是慶祝規模，而是持續檢視基本面，別讓部位大小取代了判斷力。",
+  },
+  {
+    max: 10,
+    badge: "資深股東",
+    message:
+      "你的耐心已經看到成果。長期投資比的是紀律，不是短期價格波動——別因為一時漲跌動搖已經驗證過的判斷。",
+  },
+  {
+    max: 30,
+    badge: "穩健累積者",
+    message: "你正走在正確的路上。紀律比抓時機更重要，繼續讓時間替你工作，複利不需要你天天盯盤。",
+  },
+  {
+    max: 70,
+    badge: "持續累積中",
+    message: "每一張股票都是對未來的投資。複利需要時間發酵，你已經比昨天的自己更靠近目標。",
+  },
+  {
+    max: Infinity,
+    badge: "剛起步",
+    message:
+      "萬事起頭難，你已經比很多人更早開始了。價值投資的關鍵不是速度，而是能不能撐過中間的波動。",
+  },
+];
+
+function getValueTip(percentile) {
+  return (
+    VALUE_TIP_TIERS.find((tier) => percentile < tier.max) ||
+    VALUE_TIP_TIERS[VALUE_TIP_TIERS.length - 1]
+  );
+}
+
 // Builds the token -> replacement map for the homepage template. `data` is
 // the same shape returned by GET /api/rank, or null to render the empty
 // (JS-populated-on-query) state — used as a fallback if the example query
@@ -372,6 +413,8 @@ function buildResultFragments(data) {
       RANK_RANGE_LOW: "",
       RANK_RANGE_HIGH: "",
       OWN_BRACKET: "",
+      VALUE_TIP_BADGE: "",
+      VALUE_TIP_MESSAGE: "",
       CHEER_QUOTE: "",
       PYRAMID_CHART: "",
       BRACKET_ROWS: "",
@@ -394,6 +437,7 @@ function buildResultFragments(data) {
     rank.ownBracketLabel,
   );
   const gaugeLeft = Math.min(97, Math.max(3, rank.percentileEstimate));
+  const valueTip = getValueTip(rank.percentileEstimate);
 
   return {
     RESULT_HIDDEN_CLASS: "",
@@ -409,6 +453,8 @@ function buildResultFragments(data) {
     RANK_RANGE_LOW: fmt(rank.rankRangeLow),
     RANK_RANGE_HIGH: fmt(rank.rankRangeHigh),
     OWN_BRACKET: rank.ownBracketLabel,
+    VALUE_TIP_BADGE: valueTip.badge,
+    VALUE_TIP_MESSAGE: valueTip.message,
     CHEER_QUOTE: "「時間在市場裡，比抓時機更重要」",
     PYRAMID_CHART: renderPyramidChartHtml(pyramid, rank.ownBracketLabel),
     BRACKET_ROWS: rows,

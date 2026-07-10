@@ -119,6 +119,7 @@ function renderResult(data, queryStock, queryLots) {
   document.getElementById("own-bracket").textContent = rank.ownBracketLabel;
 
   renderPercentileGauge(rank.percentileEstimate);
+  renderValueTip(rank.percentileEstimate);
 
   // Pyramid order: tip (large holders, few people) first, base (small
   // holders, many people) last. Cumulative count accumulates as you walk
@@ -182,6 +183,51 @@ function renderPercentileGauge(percentile) {
   const clampedPosition = Math.min(97, Math.max(3, percentile));
   marker.style.left = `${clampedPosition}%`;
   valueLabel.textContent = `前 ${percentile.toFixed(2)}%`;
+}
+
+// Long-term/value-investing framing tied to WHERE the user actually sits
+// (percentile), not random encouragement — see renderCheerBox() for that.
+// Lower percentile = rarer/bigger holder. Mirrored in server.js's
+// getValueTip() for the SSR homepage; keep both in sync if tiers change.
+const VALUE_TIP_TIERS = [
+  {
+    max: 1,
+    badge: "頂層股東",
+    message:
+      "你已經站在多數人看不到的位置。大戶的功課不是慶祝規模，而是持續檢視基本面，別讓部位大小取代了判斷力。",
+  },
+  {
+    max: 10,
+    badge: "資深股東",
+    message:
+      "你的耐心已經看到成果。長期投資比的是紀律，不是短期價格波動——別因為一時漲跌動搖已經驗證過的判斷。",
+  },
+  {
+    max: 30,
+    badge: "穩健累積者",
+    message: "你正走在正確的路上。紀律比抓時機更重要，繼續讓時間替你工作，複利不需要你天天盯盤。",
+  },
+  {
+    max: 70,
+    badge: "持續累積中",
+    message: "每一張股票都是對未來的投資。複利需要時間發酵，你已經比昨天的自己更靠近目標。",
+  },
+  {
+    max: Infinity,
+    badge: "剛起步",
+    message:
+      "萬事起頭難，你已經比很多人更早開始了。價值投資的關鍵不是速度，而是能不能撐過中間的波動。",
+  },
+];
+
+function getValueTip(percentile) {
+  return VALUE_TIP_TIERS.find((tier) => percentile < tier.max) || VALUE_TIP_TIERS[VALUE_TIP_TIERS.length - 1];
+}
+
+function renderValueTip(percentile) {
+  const { badge, message } = getValueTip(percentile);
+  document.getElementById("value-tip-badge").textContent = badge;
+  document.getElementById("value-tip-message").textContent = message;
 }
 
 function renderCacheNote(cache, queryStock, queryLots) {
@@ -394,13 +440,59 @@ const CLASSIC_QUOTES = [
   "願你的努力，配得上你的夢想",
 ];
 
+// Real value-investing quotes, attributed — mixed in with the plain
+// motivational one-liners above so the "經典名言" line sometimes teaches
+// something instead of only comforting. Kept as a separate attributed pool
+// rather than rewriting CLASSIC_QUOTES's 100 entries in place.
+const INVESTOR_QUOTES = [
+  { text: "別人恐懼時我貪婪，別人貪婪時我恐懼。", author: "巴菲特" },
+  { text: "價格是你付出的，價值是你得到的。", author: "巴菲特" },
+  { text: "如果你不打算持有一檔股票十年，那就不要考慮持有它十分鐘。", author: "巴菲特" },
+  { text: "投資的第一條規則是絕不虧錢，第二條規則是絕不忘記第一條。", author: "巴菲特" },
+  { text: "用合理的價格買一家卓越的公司，勝過用便宜的價格買一家平庸的公司。", author: "巴菲特" },
+  { text: "只有退潮的時候，才知道誰在裸泳。", author: "巴菲特" },
+  { text: "風險來自於你不知道自己在做什麼。", author: "巴菲特" },
+  { text: "時間是卓越企業的朋友，卻是平庸企業的敵人。", author: "巴菲特" },
+  { text: "買股票，就是在買一家公司的一部分。", author: "巴菲特" },
+  { text: "成功的投資不需要過人的智商，需要的是穩健的判斷架構與控制情緒的能力。", author: "巴菲特" },
+  { text: "別人越不理性，你越要保持理性。", author: "巴菲特" },
+  { text: "股市是把錢從沒有耐心的人手中，轉移到有耐心的人手中的地方。", author: "巴菲特" },
+  { text: "反過來想，總是反過來想。", author: "查理．蒙格" },
+  { text: "我這輩子遇到的聰明人，沒有一個不每天閱讀的。", author: "查理．蒙格" },
+  { text: "得到你想要的東西最可靠的方法，是讓自己配得上它。", author: "查理．蒙格" },
+  { text: "耐心是可以學習的，長時間專注在一件事上，你會做得更好。", author: "查理．蒙格" },
+  { text: "知道自己不知道什麼，比聰明更有用。", author: "查理．蒙格" },
+  { text: "少犯錯，比追求聰明更重要。", author: "查理．蒙格" },
+  { text: "如果你想變得聰明，就要不斷追問為什麼。", author: "查理．蒙格" },
+  { text: "投資的關鍵，是找出一家公司的競爭優勢，以及這個優勢能持續多久。", author: "查理．蒙格" },
+  { text: "短期而言，市場是一台投票機；長期而言，它是一台體重機。", author: "班傑明．葛拉漢" },
+  { text: "投資是經過透徹分析、確保本金安全並獲得適當回報的行為，其餘的都是投機。", author: "班傑明．葛拉漢" },
+  { text: "買股票時，把自己當成企業的部分擁有者，而不是在賭一張紙的漲跌。", author: "班傑明．葛拉漢" },
+  { text: "市場先生每天都會給你一個報價，你可以選擇接受，也可以選擇忽略。", author: "班傑明．葛拉漢" },
+  { text: "投資人最大的敵人，往往不是股市，而是自己。", author: "班傑明．葛拉漢" },
+  { text: "了解你所持有的股票，比預測市場走勢更重要。", author: "彼得．林區" },
+  { text: "只要公司基本面沒有改變，就不要因為股價下跌而恐慌賣出。", author: "彼得．林區" },
+  { text: "牛市在悲觀中誕生，在懷疑中成長，在樂觀中成熟，在興奮中死亡。", author: "約翰．坦伯頓" },
+];
+
+function pickCheerQuote() {
+  const pool = [
+    ...CLASSIC_QUOTES.map((text) => ({ text, author: null })),
+    ...INVESTOR_QUOTES,
+  ];
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
 // Picked fresh on every query so re-searching (or searching a different
 // stock) shows a new combo instead of always the same pair.
 function renderCheerBox() {
   const encouragement =
     ENCOURAGEMENT_WORDS[Math.floor(Math.random() * ENCOURAGEMENT_WORDS.length)];
-  const quote = CLASSIC_QUOTES[Math.floor(Math.random() * CLASSIC_QUOTES.length)];
+  const quote = pickCheerQuote();
+  const quoteText = quote.author
+    ? `「${quote.text}」－ ${quote.author}`
+    : `「${quote.text}」`;
 
   document.getElementById("cheer-encouragement").textContent = encouragement;
-  document.getElementById("cheer-quote").textContent = `「${quote}」`;
+  document.getElementById("cheer-quote").textContent = quoteText;
 }
