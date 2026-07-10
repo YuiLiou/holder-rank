@@ -412,6 +412,26 @@ function renderBracketTableHtml(pyramid, total, runningTotal, ownBracketLabel) {
   return { rows, totalRow };
 }
 
+// Mirrors public/app.js's renderTierLadder(): every grade from D to S+ in
+// climbing order (left = easiest, right = hardest), so "current" reads as a
+// position reached rather than a score in isolation. SHAREHOLDER_TIERS is
+// ordered hardest-first (S+ at index 0), so the ladder reverses it. Keep in
+// sync with app.js if the markup or tier list changes.
+function renderTierLadderHtml(tierIndex) {
+  const rungs = [...SHAREHOLDER_TIERS].reverse(); // index 0 = D ... last = S+
+  const currentPos = SHAREHOLDER_TIERS.length - 1 - tierIndex;
+
+  return rungs
+    .map((t, i) => {
+      const classes = ["rung"];
+      if (i < currentPos) classes.push("done");
+      else if (i === currentPos) classes.push("current");
+      if (i === currentPos + 1) classes.push("is-next");
+      return `<span class="${classes.join(" ")}">${t.grade}</span>`;
+    })
+    .join("");
+}
+
 // Mirrors public/app.js's formatTierUpgradeHtml(): pure rendering of the
 // numbers computeTierUpgrade() already worked out. Keep in sync if the
 // markup changes.
@@ -525,6 +545,7 @@ function buildResultFragments(data) {
       RESULT_TITLE: "",
       QUOTE_LINE: "",
       CACHE_NOTE: "",
+      BEAT_PCT: "0.00",
       RANK_POINT: "",
       RANK_TOTAL: "",
       RANK_PERCENTILE: "",
@@ -536,7 +557,7 @@ function buildResultFragments(data) {
       TIER_TONE: "",
       TIER_GRADE: "",
       TIER_TITLE: "",
-      TIER_BEAT: "",
+      TIER_LADDER: "",
       TIER_EVALUATION: "",
       TIER_ENCOURAGEMENT: "",
       TIER_QUOTE: "",
@@ -563,6 +584,7 @@ function buildResultFragments(data) {
   );
   const gaugeLeft = Math.min(97, Math.max(3, rank.percentileEstimate));
   const tier = getTier(rank.percentileEstimate);
+  const tierIndex = SHAREHOLDER_TIERS.indexOf(tier);
   const beatPct = Math.max(0, 100 - rank.percentileEstimate);
 
   return {
@@ -570,6 +592,7 @@ function buildResultFragments(data) {
     RESULT_TITLE: `範例：${stock}｜持有 ${fmt(lots)} 張（統計日期：${statDate}）`,
     QUOTE_LINE: formatQuoteLineHtml(quote, lots),
     CACHE_NOTE: "資料為即時抓取",
+    BEAT_PCT: beatPct.toFixed(2),
     RANK_POINT: `第 ${fmt(rank.rankEstimate)} 名`,
     RANK_TOTAL: fmt(rank.N),
     RANK_PERCENTILE: `前 ${rank.percentileEstimate.toFixed(2)}%`,
@@ -581,7 +604,7 @@ function buildResultFragments(data) {
     TIER_TONE: tier.tone,
     TIER_GRADE: tier.grade,
     TIER_TITLE: tier.title,
-    TIER_BEAT: `贏過 ${beatPct.toFixed(2)}% 的股東`,
+    TIER_LADDER: renderTierLadderHtml(tierIndex),
     TIER_EVALUATION: tier.evaluation,
     TIER_ENCOURAGEMENT: tier.encouragement,
     TIER_QUOTE: `「${tier.quote}」－ ${tier.author}`,

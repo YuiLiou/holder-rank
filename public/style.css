@@ -1,3 +1,78 @@
+:root {
+  /* Light theme (default). Chosen deliberately, not inherited: a cool-grey
+     paper, a warm "steady gold" accent (wealth/value, distinct from the TW
+     red-up/green-down price convention and from the tier-card's own richer
+     gold gradient), and a separate whale/retail pair for the percentile
+     gauge so it never gets confused with either of those. */
+  --paper: #f1f4f9;
+  --card: #ffffff;
+  --card-2: #f7f9fc;
+  --ink: #1f2937;
+  --ink-soft: #5b6472;
+  --ink-faint: #939fb1;
+  --line: #e5e9f0;
+  --line-strong: #d3d9e2;
+
+  --gold: #b45309;
+  --gold-strong: #92400e;
+  --gold-soft-bg: #fdf3e7;
+  --gold-soft-bg-hover: #f8e4c4;
+  --gold-soft-border: #f0d9b5;
+  --gold-soft-ink: #92400e;
+  --on-gold: #ffffff;
+
+  --price-up: #dc2626;
+  --price-down: #16a34a;
+
+  --gauge-whale: #9f1239;
+  --gauge-retail: #64748b;
+  --bar-ink: #ffffff;
+
+  --highlight-bg: #fef9c3;
+  --highlight-ink: #78350f;
+
+  --disabled-bg: #9ca3af;
+
+  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.04);
+  --shadow-lg: 0 8px 24px rgba(15, 23, 42, 0.07);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #0d1219;
+    --card: #151c27;
+    --card-2: #101620;
+    --ink: #eceff4;
+    --ink-soft: #9aa5b6;
+    --ink-faint: #5e6878;
+    --line: #232c39;
+    --line-strong: #2e3947;
+
+    --gold: #e0b84e;
+    --gold-strong: #f3d272;
+    --gold-soft-bg: #241c0f;
+    --gold-soft-bg-hover: #2e2313;
+    --gold-soft-border: #4a3a17;
+    --gold-soft-ink: #f3d272;
+    --on-gold: #241c0f;
+
+    --price-up: #f2665a;
+    --price-down: #34c084;
+
+    --gauge-whale: #e1637e;
+    --gauge-retail: #93a0b4;
+    --bar-ink: #0d1219;
+
+    --highlight-bg: #2e2510;
+    --highlight-ink: #f3d272;
+
+    --disabled-bg: #4b5563;
+
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+    --shadow-lg: 0 10px 28px rgba(0, 0, 0, 0.4);
+  }
+}
+
 * {
   box-sizing: border-box;
 }
@@ -6,17 +81,17 @@ body {
   margin: 0;
   font-family: "PingFang TC", "Microsoft JhengHei", -apple-system,
     BlinkMacSystemFont, sans-serif;
-  background: #f4f6f9;
-  color: #1f2937;
+  background: var(--paper);
+  color: var(--ink);
 }
 
 .container {
   max-width: 720px;
   margin: 40px auto;
   padding: 32px;
-  background: #fff;
+  background: var(--card);
   border-radius: 14px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+  box-shadow: var(--shadow-sm), var(--shadow-lg);
 }
 
 @media (max-width: 600px) {
@@ -32,11 +107,12 @@ body {
 h1 {
   margin: 0 0 8px;
   font-size: 24px;
+  color: var(--ink);
 }
 
 .subtitle {
   margin: 0 0 24px;
-  color: #6b7280;
+  color: var(--ink-soft);
   font-size: 14px;
   line-height: 1.6;
 }
@@ -69,15 +145,22 @@ h1 {
 
 .field label {
   font-size: 13px;
-  color: #4b5563;
+  color: var(--ink-soft);
 }
 
 .field input {
   padding: 10px 12px;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--line-strong);
   border-radius: 8px;
   font-size: 15px;
   width: 100%;
+  background: var(--card);
+  color: var(--ink);
+}
+
+.field input:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 1px;
 }
 
 @media (max-width: 480px) {
@@ -93,8 +176,8 @@ h1 {
 
 button {
   padding: 11px 20px;
-  background: #2563eb;
-  color: white;
+  background: var(--gold);
+  color: var(--on-gold);
   border: none;
   border-radius: 8px;
   font-size: 15px;
@@ -103,11 +186,17 @@ button {
 }
 
 button:hover {
-  background: #1d4ed8;
+  background: var(--gold-strong);
+}
+
+button:focus-visible {
+  outline: 2px solid var(--gold-strong);
+  outline-offset: 2px;
 }
 
 button:disabled {
-  background: #9ca3af;
+  background: var(--disabled-bg);
+  color: #ffffff;
   cursor: not-allowed;
 }
 
@@ -121,15 +210,15 @@ button:disabled {
 
 .quick-stocks-label {
   font-size: 13px;
-  color: #6b7280;
+  color: var(--ink-faint);
   margin-right: 2px;
 }
 
 .chip {
   padding: 6px 12px;
-  background: #eef2ff;
-  color: #3730a3;
-  border: 1px solid #c7d2fe;
+  background: var(--gold-soft-bg);
+  color: var(--gold-soft-ink);
+  border: 1px solid var(--gold-soft-border);
   border-radius: 999px;
   font-size: 12px;
   font-weight: 600;
@@ -144,24 +233,24 @@ button:disabled {
 }
 
 .chip:hover {
-  background: #e0e7ff;
+  background: var(--gold-soft-bg-hover);
 }
 
 .chip.active {
-  background: #4338ca;
-  color: white;
-  border-color: #4338ca;
+  background: var(--gold);
+  color: var(--on-gold);
+  border-color: var(--gold);
 }
 
 #status {
   min-height: 20px;
   font-size: 14px;
-  color: #b91c1c;
+  color: var(--price-up);
   margin-bottom: 8px;
 }
 
 #status.loading {
-  color: #2563eb;
+  color: var(--gold);
 }
 
 .hidden {
@@ -171,13 +260,15 @@ button:disabled {
 #result h2 {
   font-size: 18px;
   margin: 20px 0 4px;
+  color: var(--ink);
 }
 
 .quote-line {
   font-size: 14px;
   font-weight: 600;
-  color: #1f2937;
+  color: var(--ink);
   margin: 0 0 8px;
+  font-variant-numeric: tabular-nums;
 }
 
 .quote-line:empty {
@@ -185,20 +276,20 @@ button:disabled {
 }
 
 .quote-up {
-  color: #dc2626;
+  color: var(--price-up);
 }
 
 .quote-down {
-  color: #16a34a;
+  color: var(--price-down);
 }
 
 .quote-flat {
-  color: #6b7280;
+  color: var(--ink-soft);
 }
 
 .cache-note {
   font-size: 12px;
-  color: #9ca3af;
+  color: var(--ink-faint);
   margin: 0 0 16px;
 }
 
@@ -206,58 +297,57 @@ button:disabled {
   padding: 2px 8px;
   font-size: 11px;
   background: none;
-  color: #2563eb;
-  border: 1px solid #bfdbfe;
+  color: var(--gold);
+  border: 1px solid var(--gold-soft-border);
   border-radius: 6px;
   margin-left: 6px;
 }
 
 .cache-note button:hover {
-  background: #eff6ff;
+  background: var(--gold-soft-bg);
 }
 
-.rank-card {
-  display: flex;
-  gap: 16px;
-  flex-wrap: wrap;
-  margin-bottom: 12px;
+/* The reveal hero — the one moment the whole page exists for. A single
+   "you beat X% of shareholders" statement stated as fact (not split across
+   two same-weight cards), sized to dominate the section. The percentage
+   text is swapped for a live count-up in app.js; this value is the
+   server-rendered/no-JS fallback. */
+.reveal {
+  margin: 4px 0 20px;
 }
 
-.rank-highlight {
-  flex: 1;
-  min-width: 220px;
-  background: linear-gradient(135deg, #2563eb, #1e40af);
-  color: white;
-  border-radius: 12px;
-  padding: 18px 20px;
+.reveal-eyebrow {
+  margin: 0 0 2px;
+  font-size: 14px;
+  color: var(--ink-soft);
+}
+
+.reveal-figure-row {
   display: flex;
-  flex-direction: column;
+  align-items: baseline;
   gap: 4px;
 }
 
-.rank-label {
-  font-size: 13px;
-  opacity: 0.85;
+.reveal-figure {
+  font-size: clamp(44px, 11vw, 68px);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  color: var(--gold);
+  font-variant-numeric: tabular-nums;
 }
 
-.rank-number {
-  font-size: 28px;
+.reveal-unit {
+  font-size: clamp(20px, 4.5vw, 28px);
   font-weight: 700;
-}
-
-@media (max-width: 480px) {
-  .rank-highlight {
-    padding: 14px 16px;
-  }
-
-  .rank-number {
-    font-size: 24px;
-  }
-}
-
-.rank-sub {
-  font-size: 12px;
+  color: var(--gold);
   opacity: 0.85;
+}
+
+.reveal-sub {
+  margin: 4px 0 0;
+  font-size: 15px;
+  color: var(--ink-soft);
 }
 
 .percentile-gauge {
@@ -268,7 +358,7 @@ button:disabled {
   display: flex;
   justify-content: space-between;
   font-size: 11px;
-  color: #9ca3af;
+  color: var(--ink-faint);
   margin-bottom: 6px;
 }
 
@@ -276,7 +366,7 @@ button:disabled {
   position: relative;
   height: 10px;
   border-radius: 999px;
-  background: linear-gradient(to right, #f59e0b, #93c5fd);
+  background: linear-gradient(to right, var(--gauge-whale), var(--gauge-retail));
 }
 
 .gauge-marker {
@@ -286,8 +376,8 @@ button:disabled {
   width: 18px;
   height: 18px;
   border-radius: 50%;
-  background: #1f2937;
-  border: 3px solid white;
+  background: var(--ink);
+  border: 3px solid var(--card);
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
   transition: left 0.4s ease;
 }
@@ -297,13 +387,14 @@ button:disabled {
   top: -26px;
   left: 50%;
   transform: translateX(-50%);
-  background: #1f2937;
-  color: white;
+  background: var(--ink);
+  color: var(--card);
   font-size: 11px;
   font-weight: 700;
   padding: 2px 7px;
   border-radius: 6px;
   white-space: nowrap;
+  font-variant-numeric: tabular-nums;
 }
 
 .gauge-marker-value::after {
@@ -313,12 +404,104 @@ button:disabled {
   left: 50%;
   transform: translateX(-50%);
   border: 4px solid transparent;
-  border-top-color: #1f2937;
+  border-top-color: var(--ink);
+}
+
+/* Modular stat tiles — supporting detail underneath the reveal hero, calm
+   and flat (card-2 + hairline border) rather than another gradient, so the
+   hero above stays the one saturated moment in this section. */
+.stat-grid {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 4px 0 14px;
+}
+
+.stat-tile {
+  flex: 1;
+  min-width: 210px;
+  background: var(--card-2);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.stat-k {
+  font-size: 12px;
+  color: var(--ink-faint);
+}
+
+.stat-v {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.stat-s {
+  font-size: 12px;
+  color: var(--ink-soft);
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 480px) {
+  .stat-tile {
+    min-width: 0;
+    padding: 12px 14px;
+  }
+
+  .stat-v {
+    font-size: 18px;
+  }
+}
+
+.rank-range {
+  font-size: 14px;
+  color: var(--ink-soft);
+  margin: 8px 0 20px;
+}
+
+/* The result panel is split into three labelled parts — 問題 / 評價 / 金字塔 —
+   each introduced by a numbered head. Sections 2 and 3 carry a top divider so
+   the boundary is obvious; the first section sits directly under the query
+   echo (result-header) without one. */
+.result-section {
+  margin-top: 24px;
+  padding-top: 22px;
+  border-top: 1px solid var(--line);
+}
+
+.result-section:first-of-type {
+  margin-top: 10px;
+  padding-top: 0;
+  border-top: none;
+}
+
+/* Neutralise the trailing margin the last inner element carries, so the gap
+   before the next section's divider stays even across all three. */
+.result-section > :last-child {
+  margin-bottom: 0;
+}
+
+.section-head {
+  margin-bottom: 14px;
+}
+
+.section-heading {
+  font-size: 16px;
+  margin: 0;
+  color: var(--ink);
+  font-weight: 700;
 }
 
 /* The graded "股東評級" verdict card. Tone (gold/indigo/teal/sky/slate) is
    driven by the tier and set as a modifier class; the gradient gives each
-   grade its own identity while the layout stays constant. */
+   grade its own identity while the layout stays constant. Deliberately left
+   un-tokenised: each tone is a saturated, self-contained, always-white-text
+   card that should look the same regardless of the page's light/dark theme. */
 .tier-card {
   color: #fff;
   border-radius: 14px;
@@ -372,11 +555,59 @@ button:disabled {
   margin-top: 2px;
 }
 
-.tier-beat {
-  font-size: 14px;
-  font-weight: 600;
-  opacity: 0.92;
-  margin-top: 4px;
+/* The rank ladder — every grade from D to S+, in climbing order left to
+   right, so "current" always reads as a position reached, not a score in
+   isolation. Rungs already passed are dimmed-solid; the current rung is a
+   white badge that pops against any of the five gradients above; the very
+   next rung (if any) gets a dashed outline to pair visually with the
+   tier-upgrade callout beneath it. */
+.tier-ladder {
+  display: flex;
+  gap: 6px;
+  margin: 16px 0 4px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+
+.rung {
+  flex: 1;
+  min-width: 42px;
+  text-align: center;
+  padding: 7px 4px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  background: rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.55);
+  border: 1px solid transparent;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.rung.done {
+  color: rgba(255, 255, 255, 0.88);
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.rung.current {
+  background: #ffffff;
+  color: #1f2937;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+}
+
+.rung.is-next {
+  border: 1px dashed rgba(255, 255, 255, 0.75);
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+@media (max-width: 480px) {
+  .rung {
+    min-width: 34px;
+    font-size: 11px;
+    padding: 6px 3px;
+  }
 }
 
 .tier-eval {
@@ -393,25 +624,17 @@ button:disabled {
   margin: 8px 0 0;
 }
 
-.tier-quote {
-  font-size: 13px;
-  font-style: italic;
-  line-height: 1.65;
-  margin: 12px 0 0;
-  padding-top: 12px;
-  border-top: 1px solid rgba(255, 255, 255, 0.28);
-  opacity: 0.9;
-}
-
 /* "Buy N more lots to reach the next tier" banner. Empty (no upgrade
    available, e.g. already S+) collapses to nothing rather than leaving a
    blank gap — the SSR/client renderers both just leave it empty in that
-   case instead of toggling a hidden class. */
+   case instead of toggling a hidden class. Dashed border pairs it visually
+   with the ladder's .is-next rung above. */
 .tier-upgrade {
   margin-top: 14px;
   padding: 12px 14px;
   border-radius: 10px;
-  background: rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px dashed rgba(255, 255, 255, 0.4);
   font-size: 14px;
   line-height: 1.6;
 }
@@ -422,6 +645,16 @@ button:disabled {
 
 .tier-upgrade strong {
   font-weight: 800;
+}
+
+.tier-quote {
+  font-size: 13px;
+  font-style: italic;
+  line-height: 1.65;
+  margin: 12px 0 0;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.28);
+  opacity: 0.9;
 }
 
 @media (max-width: 480px) {
@@ -436,45 +669,6 @@ button:disabled {
   .tier-name {
     font-size: 19px;
   }
-}
-
-.rank-range {
-  font-size: 14px;
-  color: #4b5563;
-  margin: 8px 0 20px;
-}
-
-/* The result panel is split into three labelled parts — 問題 / 評價 / 金字塔 —
-   each introduced by a numbered head. Sections 2 and 3 carry a top divider so
-   the boundary is obvious; the first section sits directly under the query
-   echo (result-header) without one. */
-.result-section {
-  margin-top: 24px;
-  padding-top: 22px;
-  border-top: 1px solid #eef1f5;
-}
-
-.result-section:first-of-type {
-  margin-top: 10px;
-  padding-top: 0;
-  border-top: none;
-}
-
-/* Neutralise the trailing margin the last inner element carries, so the gap
-   before the next section's divider stays even across all three. */
-.result-section > :last-child {
-  margin-bottom: 0;
-}
-
-.section-head {
-  margin-bottom: 14px;
-}
-
-.section-heading {
-  font-size: 16px;
-  margin: 0;
-  color: #111827;
-  font-weight: 700;
 }
 
 .pyramid-chart {
@@ -494,7 +688,7 @@ button:disabled {
   width: 104px;
   flex-shrink: 0;
   font-size: 11px;
-  color: #6b7280;
+  color: var(--ink-faint);
   text-align: right;
   white-space: nowrap;
 }
@@ -517,9 +711,12 @@ button:disabled {
   justify-content: center;
 }
 
+/* Bars share the gauge's "retail" slate — both encode the same axis (the
+   whole shareholder distribution) — so the palette reads as one system;
+   the user's own bracket switches to gold, matching the reveal hero above. */
 .pyramid-bar {
   height: 18px;
-  background: #93c5fd;
+  background: var(--gauge-retail);
   border-radius: 3px;
   display: flex;
   align-items: center;
@@ -530,22 +727,22 @@ button:disabled {
 
 .pyramid-bar span {
   font-size: 10px;
-  color: #1e3a8a;
+  color: var(--bar-ink);
   font-weight: 600;
   white-space: nowrap;
   padding: 0 6px;
 }
 
 .pyramid-row.is-own .pyramid-bar {
-  background: #f59e0b;
+  background: var(--gold);
 }
 
 .pyramid-row.is-own .pyramid-bar span {
-  color: #78350f;
+  color: var(--on-gold);
 }
 
 .pyramid-row.is-own .pyramid-row-label {
-  color: #b45309;
+  color: var(--gold);
   font-weight: 700;
 }
 
@@ -571,7 +768,8 @@ table {
 th, td {
   padding: 8px 10px;
   text-align: right;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid var(--line);
+  font-variant-numeric: tabular-nums;
 }
 
 th:first-child, td:first-child {
@@ -579,30 +777,30 @@ th:first-child, td:first-child {
 }
 
 thead th {
-  color: #6b7280;
+  color: var(--ink-faint);
   font-weight: 600;
-  border-bottom: 2px solid #d1d5db;
+  border-bottom: 2px solid var(--line-strong);
 }
 
 tr.highlight-row td {
-  background: #fef9c3;
+  background: var(--highlight-bg);
   font-weight: 700;
-  color: #78350f;
-  border-top: 2px solid #f59e0b;
-  border-bottom: 2px solid #f59e0b;
+  color: var(--highlight-ink);
+  border-top: 2px solid var(--gold);
+  border-bottom: 2px solid var(--gold);
   position: relative;
 }
 
 tr.highlight-row td:first-child {
-  border-left: 4px solid #f59e0b;
+  border-left: 4px solid var(--gold);
 }
 
 .you-badge {
   display: inline-block;
   margin-left: 8px;
   padding: 2px 8px;
-  background: #f59e0b;
-  color: white;
+  background: var(--gold);
+  color: var(--on-gold);
   font-size: 11px;
   font-weight: 700;
   border-radius: 999px;
@@ -610,18 +808,24 @@ tr.highlight-row td:first-child {
 }
 
 tr.total-row td {
-  border-top: 2px solid #d1d5db;
+  border-top: 2px solid var(--line-strong);
   border-bottom: none;
   font-weight: 700;
-  color: #1f2937;
+  color: var(--ink);
 }
 
 .caveats {
   font-size: 12px;
-  color: #6b7280;
+  color: var(--ink-faint);
   line-height: 1.8;
   margin-top: 26px;
   padding-top: 20px;
   padding-left: 18px;
-  border-top: 1px solid #eef1f5;
+  border-top: 1px solid var(--line);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gauge-marker {
+    transition: none;
+  }
 }

@@ -75,16 +75,13 @@
           <h3 class="section-heading">你的持股排名</h3>
         </div>
 
-        <div class="rank-card">
-          <div class="rank-highlight">
-            <span class="rank-label">估計名次</span>
-            <span id="rank-point" class="rank-number">{{RANK_POINT}}</span>
-            <span class="rank-sub">/ 全體約 <span id="rank-total">{{RANK_TOTAL}}</span> 位股東</span>
+        <div class="reveal">
+          <p class="reveal-eyebrow">你的持股，贏過</p>
+          <div class="reveal-figure-row">
+            <span id="reveal-beat" class="reveal-figure" data-target="{{BEAT_PCT}}">{{BEAT_PCT}}</span>
+            <span class="reveal-unit">%</span>
           </div>
-          <div class="rank-highlight">
-            <span class="rank-label">估計百分位</span>
-            <span id="rank-percentile" class="rank-number">{{RANK_PERCENTILE}}</span>
-          </div>
+          <p class="reveal-sub">的全體股東</p>
         </div>
 
         <div class="percentile-gauge">
@@ -96,6 +93,18 @@
             <div class="gauge-marker" id="gauge-marker" style="left: {{GAUGE_LEFT}}%">
               <span class="gauge-marker-value" id="gauge-marker-value">{{GAUGE_VALUE}}</span>
             </div>
+          </div>
+        </div>
+
+        <div class="stat-grid">
+          <div class="stat-tile">
+            <span class="stat-k">估計名次</span>
+            <span id="rank-point" class="stat-v">{{RANK_POINT}}</span>
+            <span class="stat-s">/ 全體約 <span id="rank-total">{{RANK_TOTAL}}</span> 位股東</span>
+          </div>
+          <div class="stat-tile">
+            <span class="stat-k">估計百分位</span>
+            <span id="rank-percentile" class="stat-v">{{RANK_PERCENTILE}}</span>
           </div>
         </div>
 
@@ -118,11 +127,13 @@
             <span class="tier-grade" id="tier-grade">{{TIER_GRADE}}</span>
           </div>
           <div class="tier-name" id="tier-name">{{TIER_TITLE}}</div>
-          <div class="tier-beat" id="tier-beat">{{TIER_BEAT}}</div>
+
+          <div class="tier-ladder" id="tier-ladder" role="img" aria-label="持股等級階梯，共八級">{{TIER_LADDER}}</div>
+
           <p class="tier-eval" id="tier-eval">{{TIER_EVALUATION}}</p>
           <p class="tier-cheer" id="tier-cheer">{{TIER_ENCOURAGEMENT}}</p>
-          <p class="tier-quote" id="tier-quote">{{TIER_QUOTE}}</p>
           <div class="tier-upgrade" id="tier-upgrade">{{TIER_UPGRADE_HTML}}</div>
+          <p class="tier-quote" id="tier-quote">{{TIER_QUOTE}}</p>
         </div>
       </section>
 

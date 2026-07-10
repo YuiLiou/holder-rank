@@ -117,6 +117,7 @@ function renderResult(data, queryStock, queryLots) {
   document.getElementById("rank-range-high").textContent = fmt(rank.rankRangeHigh);
   document.getElementById("own-bracket").textContent = rank.ownBracketLabel;
 
+  renderRevealFigure(rank.percentileEstimate);
   renderPercentileGauge(rank.percentileEstimate);
   renderTierCard(rank, upgrade);
 
@@ -171,6 +172,35 @@ function renderResult(data, queryStock, queryLots) {
   document
     .getElementById("result-title")
     .scrollIntoView({ block: "start", behavior: "smooth" });
+}
+
+// The reveal hero's headline number. Counts up from 0 on each new query so
+// the result feels like it "happens" rather than just appearing — skipped
+// entirely under prefers-reduced-motion, which jumps straight to the final
+// value.
+const prefersReducedMotion = window.matchMedia(
+  "(prefers-reduced-motion: reduce)",
+).matches;
+
+function renderRevealFigure(percentile) {
+  const el = document.getElementById("reveal-beat");
+  const target = Math.max(0, 100 - percentile);
+
+  if (prefersReducedMotion) {
+    el.textContent = target.toFixed(2);
+    return;
+  }
+
+  const duration = 900;
+  const start = performance.now();
+
+  function tick(now) {
+    const progress = Math.min((now - start) / duration, 1);
+    const eased = 1 - Math.pow(1 - progress, 3);
+    el.textContent = (target * eased).toFixed(2);
+    if (progress < 1) requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
 }
 
 // Position on the 0%-100% spectrum reflects the real percentile, but is
@@ -264,21 +294,40 @@ function formatTierUpgradeHtml(upgrade) {
   );
 }
 
+// Every grade from D to S+ in climbing order (left = easiest, right =
+// hardest), so "current" reads as a position reached rather than a score in
+// isolation. SHAREHOLDER_TIERS is ordered hardest-first (S+ at index 0), so
+// the ladder reverses it. Mirrors server.js's renderTierLadderHtml() for
+// the SSR homepage — keep both in sync.
+function renderTierLadder(tierIndex) {
+  const rungs = [...SHAREHOLDER_TIERS].reverse(); // index 0 = D ... last = S+
+  const currentPos = SHAREHOLDER_TIERS.length - 1 - tierIndex;
+
+  return rungs
+    .map((t, i) => {
+      const classes = ["rung"];
+      if (i < currentPos) classes.push("done");
+      else if (i === currentPos) classes.push("current");
+      if (i === currentPos + 1) classes.push("is-next");
+      return `<span class="${classes.join(" ")}">${t.grade}</span>`;
+    })
+    .join("");
+}
+
 function renderTierCard(rank, upgrade) {
   const tier = getTier(rank.percentileEstimate);
-  const beatPct = Math.max(0, 100 - rank.percentileEstimate);
+  const tierIndex = SHAREHOLDER_TIERS.indexOf(tier);
 
   const card = document.getElementById("tier-card");
   card.className = `tier-card tier-card--${tier.tone}`;
   document.getElementById("tier-grade").textContent = tier.grade;
   document.getElementById("tier-name").textContent = tier.title;
-  document.getElementById("tier-beat").textContent =
-    `贏過 ${beatPct.toFixed(2)}% 的股東`;
+  document.getElementById("tier-ladder").innerHTML = renderTierLadder(tierIndex);
   document.getElementById("tier-eval").textContent = tier.evaluation;
   document.getElementById("tier-cheer").textContent = tier.encouragement;
+  document.getElementById("tier-upgrade").innerHTML = formatTierUpgradeHtml(upgrade);
   document.getElementById("tier-quote").textContent =
     `「${tier.quote}」－ ${tier.author}`;
-  document.getElementById("tier-upgrade").innerHTML = formatTierUpgradeHtml(upgrade);
 }
 
 function renderCacheNote(cache, queryStock, queryLots) {
