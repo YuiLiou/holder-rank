@@ -379,44 +379,65 @@ function renderBracketTableHtml(pyramid, total, runningTotal, ownBracketLabel) {
   return { rows, totalRow };
 }
 
-// Mirrors public/app.js's VALUE_TIP_TIERS / getValueTip(): long-term/value-
-// investing framing tied to the user's actual percentile, not random
-// encouragement. Keep both copies in sync if the tiers change.
-const VALUE_TIP_TIERS = [
+// Mirrors public/app.js's SHAREHOLDER_TIERS / getTier(): after showing the
+// computed rank/percentile, place the user into a graded tier with an
+// evaluation, encouragement, and a fitting master quote. percentile = 前 X%;
+// smaller = rarer/bigger holder. Keep both copies in sync if the tiers change.
+const SHAREHOLDER_TIERS = [
   {
-    max: 1,
-    badge: "頂層股東",
-    message:
-      "你已經站在多數人看不到的位置。大戶的功課不是慶祝規模，而是持續檢視基本面，別讓部位大小取代了判斷力。",
+    max: 0.5, grade: "S+", tone: "gold", title: "巔峰巨鯨",
+    evaluation: "你站在這檔股票金字塔的最頂端，持股規模超越幾乎所有股東。",
+    encouragement: "站得越高，越需要冷靜。真正的考驗不是累積，而是在雜訊中守住判斷。",
+    quote: "別人恐懼時我貪婪，別人貪婪時我恐懼。", author: "巴菲特",
   },
   {
-    max: 10,
-    badge: "資深股東",
-    message:
-      "你的耐心已經看到成果。長期投資比的是紀律，不是短期價格波動——別因為一時漲跌動搖已經驗證過的判斷。",
+    max: 2, grade: "S", tone: "gold", title: "頂級大戶",
+    evaluation: "你已進入核心股東圈，是多數人一輩子難以觸及的位置。",
+    encouragement: "規模放大了每個決策的重量。持續檢視基本面，別讓部位取代思考。",
+    quote: "價格是你付出的，價值是你得到的。", author: "巴菲特",
   },
   {
-    max: 30,
-    badge: "穩健累積者",
-    message: "你正走在正確的路上。紀律比抓時機更重要，繼續讓時間替你工作，複利不需要你天天盯盤。",
+    max: 5, grade: "A+", tone: "indigo", title: "資深大戶",
+    evaluation: "前 5% 的持股水位，是長時間紀律累積的成果，不是短線能達成的。",
+    encouragement: "你已經證明了耐心的價值，接下來比的是不被市場情緒帶著走。",
+    quote: "時間是卓越企業的朋友，卻是平庸企業的敵人。", author: "巴菲特",
   },
   {
-    max: 70,
-    badge: "持續累積中",
-    message: "每一張股票都是對未來的投資。複利需要時間發酵，你已經比昨天的自己更靠近目標。",
+    max: 12, grade: "A", tone: "indigo", title: "資深股東",
+    evaluation: "你的持股超越約九成股東，是這檔標的的穩固中堅。",
+    encouragement: "中堅的力量在於穩定。別因一時漲跌，動搖已經驗證過的長期判斷。",
+    quote: "如果你不打算持有一檔股票十年，那就不要考慮持有它十分鐘。", author: "巴菲特",
   },
   {
-    max: Infinity,
-    badge: "剛起步",
-    message:
-      "萬事起頭難，你已經比很多人更早開始了。價值投資的關鍵不是速度，而是能不能撐過中間的波動。",
+    max: 25, grade: "B+", tone: "teal", title: "穩健持有者",
+    evaluation: "你已走在前四分之一，超越大多數只在場邊觀望的人。",
+    encouragement: "紀律比抓時機更重要。讓時間替你工作，複利不需要你天天盯盤。",
+    quote: "股市是把錢從沒有耐心的人手中，轉移到有耐心的人手中的地方。", author: "巴菲特",
+  },
+  {
+    max: 50, grade: "B", tone: "teal", title: "穩定累積者",
+    evaluation: "你的持股落在前段班，已經跨過「開始」這個最難的門檻。",
+    encouragement: "每一張股票都是對未來的投資，你已經比昨天的自己更靠近目標。",
+    quote: "反過來想，總是反過來想。", author: "查理．蒙格",
+  },
+  {
+    max: 80, grade: "C", tone: "sky", title: "成長新星",
+    evaluation: "你正在累積的路上，位置還在中後段，但方向是對的。",
+    encouragement: "關鍵不是速度，而是能不能持續。小額也能滾出大局。",
+    quote: "得到你想要的東西最可靠的方法，是讓自己配得上它。", author: "查理．蒙格",
+  },
+  {
+    max: Infinity, grade: "D", tone: "slate", title: "啟程新手",
+    evaluation: "你才剛起步，但已經比從沒開始的人更前面了。",
+    encouragement: "每個大戶都曾是新手，今天的第一張，就是未來複利的種子。",
+    quote: "投資的第一條規則是絕不虧錢，第二條規則是絕不忘記第一條。", author: "巴菲特",
   },
 ];
 
-function getValueTip(percentile) {
+function getTier(percentile) {
   return (
-    VALUE_TIP_TIERS.find((tier) => percentile < tier.max) ||
-    VALUE_TIP_TIERS[VALUE_TIP_TIERS.length - 1]
+    SHAREHOLDER_TIERS.find((t) => percentile < t.max) ||
+    SHAREHOLDER_TIERS[SHAREHOLDER_TIERS.length - 1]
   );
 }
 
@@ -431,7 +452,6 @@ function buildResultFragments(data) {
       RESULT_TITLE: "",
       QUOTE_LINE: "",
       CACHE_NOTE: "",
-      CHEER_ENCOURAGEMENT: "",
       RANK_POINT: "",
       RANK_TOTAL: "",
       RANK_PERCENTILE: "",
@@ -440,9 +460,13 @@ function buildResultFragments(data) {
       RANK_RANGE_LOW: "",
       RANK_RANGE_HIGH: "",
       OWN_BRACKET: "",
-      VALUE_TIP_BADGE: "",
-      VALUE_TIP_MESSAGE: "",
-      CHEER_QUOTE: "",
+      TIER_TONE: "",
+      TIER_GRADE: "",
+      TIER_TITLE: "",
+      TIER_BEAT: "",
+      TIER_EVALUATION: "",
+      TIER_ENCOURAGEMENT: "",
+      TIER_QUOTE: "",
       PYRAMID_CHART: "",
       BRACKET_ROWS: "",
       TOTAL_ROW: "",
@@ -464,14 +488,14 @@ function buildResultFragments(data) {
     rank.ownBracketLabel,
   );
   const gaugeLeft = Math.min(97, Math.max(3, rank.percentileEstimate));
-  const valueTip = getValueTip(rank.percentileEstimate);
+  const tier = getTier(rank.percentileEstimate);
+  const beatPct = Math.max(0, 100 - rank.percentileEstimate);
 
   return {
     RESULT_HIDDEN_CLASS: "",
     RESULT_TITLE: `範例：${stock}｜持有 ${fmt(lots)} 張（統計日期：${statDate}）`,
     QUOTE_LINE: formatQuoteLineHtml(quote, lots),
     CACHE_NOTE: "資料為即時抓取",
-    CHEER_ENCOURAGEMENT: "你已經很棒了，繼續前進！",
     RANK_POINT: `第 ${fmt(rank.rankEstimate)} 名`,
     RANK_TOTAL: fmt(rank.N),
     RANK_PERCENTILE: `前 ${rank.percentileEstimate.toFixed(2)}%`,
@@ -480,9 +504,13 @@ function buildResultFragments(data) {
     RANK_RANGE_LOW: fmt(rank.rankRangeLow),
     RANK_RANGE_HIGH: fmt(rank.rankRangeHigh),
     OWN_BRACKET: rank.ownBracketLabel,
-    VALUE_TIP_BADGE: valueTip.badge,
-    VALUE_TIP_MESSAGE: valueTip.message,
-    CHEER_QUOTE: "「時間在市場裡，比抓時機更重要」",
+    TIER_TONE: tier.tone,
+    TIER_GRADE: tier.grade,
+    TIER_TITLE: tier.title,
+    TIER_BEAT: `贏過 ${beatPct.toFixed(2)}% 的股東`,
+    TIER_EVALUATION: tier.evaluation,
+    TIER_ENCOURAGEMENT: tier.encouragement,
+    TIER_QUOTE: `「${tier.quote}」－ ${tier.author}`,
     PYRAMID_CHART: renderPyramidChartHtml(pyramid, rank.ownBracketLabel),
     BRACKET_ROWS: rows,
     TOTAL_ROW: totalRow,

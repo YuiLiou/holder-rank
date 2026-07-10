@@ -68,12 +68,6 @@
       <p class="quote-line" id="quote-line">{{QUOTE_LINE}}</p>
       <p class="cache-note" id="cache-note">{{CACHE_NOTE}}</p>
 
-      <div id="cheer-box" class="cheer-box">
-        <p class="cheer-line">
-          <span id="cheer-encouragement" class="cheer-text">{{CHEER_ENCOURAGEMENT}}</span>
-        </p>
-      </div>
-
       <div class="rank-card">
         <div class="rank-highlight">
           <span class="rank-label">估計名次</span>
@@ -98,9 +92,16 @@
         </div>
       </div>
 
-      <div class="value-tip" id="value-tip">
-        <span class="value-tip-badge" id="value-tip-badge">{{VALUE_TIP_BADGE}}</span>
-        <p class="value-tip-message" id="value-tip-message">{{VALUE_TIP_MESSAGE}}</p>
+      <div class="tier-card tier-card--{{TIER_TONE}}" id="tier-card">
+        <div class="tier-card-top">
+          <span class="tier-eyebrow">持股等級評定</span>
+          <span class="tier-grade" id="tier-grade">{{TIER_GRADE}}</span>
+        </div>
+        <div class="tier-name" id="tier-name">{{TIER_TITLE}}</div>
+        <div class="tier-beat" id="tier-beat">{{TIER_BEAT}}</div>
+        <p class="tier-eval" id="tier-eval">{{TIER_EVALUATION}}</p>
+        <p class="tier-cheer" id="tier-cheer">{{TIER_ENCOURAGEMENT}}</p>
+        <p class="tier-quote" id="tier-quote">{{TIER_QUOTE}}</p>
       </div>
 
       <p class="rank-range">
@@ -108,10 +109,6 @@
         <span id="rank-range-low">{{RANK_RANGE_LOW}}</span> 名 ～ 第
         <span id="rank-range-high">{{RANK_RANGE_HIGH}}</span> 名
         （落於「<span id="own-bracket">{{OWN_BRACKET}}</span>」級距）
-      </p>
-
-      <p class="pyramid-quote">
-        <span id="cheer-quote">{{CHEER_QUOTE}}</span>
       </p>
 
       <h3 class="section-title">持股金字塔</h3>

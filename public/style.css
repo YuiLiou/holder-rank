@@ -316,31 +316,105 @@ button:disabled {
   border-top-color: #1f2937;
 }
 
-.value-tip {
-  background: #f0fdf4;
-  border: 1px solid #bbf7d0;
-  border-left: 4px solid #16a34a;
-  border-radius: 10px;
-  padding: 12px 16px;
-  margin: 4px 0 16px;
+/* The graded "股東評級" verdict card. Tone (gold/indigo/teal/sky/slate) is
+   driven by the tier and set as a modifier class; the gradient gives each
+   grade its own identity while the layout stays constant. */
+.tier-card {
+  color: #fff;
+  border-radius: 14px;
+  padding: 20px 22px;
+  margin: 8px 0 18px;
+  background: linear-gradient(135deg, #334155, #64748b);
+  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.14);
 }
 
-.value-tip-badge {
-  display: inline-block;
-  background: #16a34a;
-  color: white;
-  font-size: 11px;
+.tier-card--gold {
+  background: linear-gradient(135deg, #b45309, #f59e0b);
+}
+.tier-card--indigo {
+  background: linear-gradient(135deg, #3730a3, #6366f1);
+}
+.tier-card--teal {
+  background: linear-gradient(135deg, #0f766e, #14b8a6);
+}
+.tier-card--sky {
+  background: linear-gradient(135deg, #0369a1, #0ea5e9);
+}
+.tier-card--slate {
+  background: linear-gradient(135deg, #334155, #64748b);
+}
+
+.tier-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.tier-eyebrow {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 3px;
+  opacity: 0.85;
+}
+
+.tier-grade {
+  font-size: 46px;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -1px;
+  font-variant-numeric: tabular-nums;
+}
+
+.tier-name {
+  font-size: 22px;
+  font-weight: 800;
+  margin-top: 2px;
+}
+
+.tier-beat {
+  font-size: 14px;
+  font-weight: 600;
+  opacity: 0.92;
+  margin-top: 4px;
+}
+
+.tier-eval {
+  font-size: 14px;
+  line-height: 1.75;
+  margin: 12px 0 0;
+  opacity: 0.96;
+}
+
+.tier-cheer {
+  font-size: 14px;
+  line-height: 1.75;
   font-weight: 700;
-  padding: 2px 9px;
-  border-radius: 999px;
-  margin-bottom: 6px;
+  margin: 8px 0 0;
 }
 
-.value-tip-message {
-  margin: 0;
+.tier-quote {
   font-size: 13px;
-  color: #14532d;
-  line-height: 1.6;
+  font-style: italic;
+  line-height: 1.65;
+  margin: 12px 0 0;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.28);
+  opacity: 0.9;
+}
+
+@media (max-width: 480px) {
+  .tier-card {
+    padding: 16px 16px;
+  }
+
+  .tier-grade {
+    font-size: 38px;
+  }
+
+  .tier-name {
+    font-size: 19px;
+  }
 }
 
 .rank-range {
@@ -353,44 +427,6 @@ button:disabled {
   font-size: 14px;
   color: #4b5563;
   margin: 0 0 10px;
-}
-
-.cheer-box {
-  margin: 0 0 18px;
-  padding: 16px 20px;
-  border-radius: 12px;
-  background: linear-gradient(135deg, #fef3c7, #fde68a);
-  border: 1px solid #fcd34d;
-}
-
-.cheer-line {
-  margin: 0;
-  font-size: 15px;
-  line-height: 1.6;
-}
-
-.cheer-text {
-  font-weight: 700;
-  color: #78350f;
-}
-
-@media (max-width: 480px) {
-  .cheer-box {
-    padding: 12px 14px;
-  }
-
-  .cheer-line {
-    font-size: 13px;
-  }
-}
-
-.pyramid-quote {
-  margin: 0 0 14px;
-  font-size: 14px;
-  font-style: italic;
-  font-weight: 500;
-  color: #92400e;
-  text-align: center;
 }
 
 .pyramid-chart {
