@@ -16,7 +16,8 @@
       "Bash(python3 *)",
       "Bash(mkdir -p /private/tmp/claude-501/-Users-rusiang-Public-Project-holder-rank/c10d031e-a902-4b70-9f57-60aa6931b97d/scratchpad)",
       "Bash(npm init *)",
-      "Bash(npm install *)"
+      "Bash(npm install *)",
+      "WebSearch"
     ]
   }
 }

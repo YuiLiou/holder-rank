@@ -63,25 +63,25 @@
 
     <div id="status"></div>
 
-    <div id="result" class="hidden">
-      <h2 id="result-title"></h2>
-      <p class="cache-note" id="cache-note"></p>
+    <div id="result" class="{{RESULT_HIDDEN_CLASS}}">
+      <h2 id="result-title">{{RESULT_TITLE}}</h2>
+      <p class="cache-note" id="cache-note">{{CACHE_NOTE}}</p>
 
       <div id="cheer-box" class="cheer-box">
         <p class="cheer-line">
-          <span id="cheer-encouragement" class="cheer-text"></span>
+          <span id="cheer-encouragement" class="cheer-text">{{CHEER_ENCOURAGEMENT}}</span>
         </p>
       </div>
 
       <div class="rank-card">
         <div class="rank-highlight">
           <span class="rank-label">估計名次</span>
-          <span id="rank-point" class="rank-number"></span>
-          <span class="rank-sub">/ 全體約 <span id="rank-total"></span> 位股東</span>
+          <span id="rank-point" class="rank-number">{{RANK_POINT}}</span>
+          <span class="rank-sub">/ 全體約 <span id="rank-total">{{RANK_TOTAL}}</span> 位股東</span>
         </div>
         <div class="rank-highlight">
           <span class="rank-label">估計百分位</span>
-          <span id="rank-percentile" class="rank-number"></span>
+          <span id="rank-percentile" class="rank-number">{{RANK_PERCENTILE}}</span>
         </div>
       </div>
 
@@ -91,25 +91,25 @@
           <span>散戶（100%）</span>
         </div>
         <div class="gauge-track" id="gauge-track">
-          <div class="gauge-marker" id="gauge-marker">
-            <span class="gauge-marker-value" id="gauge-marker-value"></span>
+          <div class="gauge-marker" id="gauge-marker" style="left: {{GAUGE_LEFT}}%">
+            <span class="gauge-marker-value" id="gauge-marker-value">{{GAUGE_VALUE}}</span>
           </div>
         </div>
       </div>
 
       <p class="rank-range">
         名次估計採級距內插法計算；若只看級距邊界（不做內插），理論範圍為第
-        <span id="rank-range-low"></span> 名 ～ 第
-        <span id="rank-range-high"></span> 名
-        （落於「<span id="own-bracket"></span>」級距）
+        <span id="rank-range-low">{{RANK_RANGE_LOW}}</span> 名 ～ 第
+        <span id="rank-range-high">{{RANK_RANGE_HIGH}}</span> 名
+        （落於「<span id="own-bracket">{{OWN_BRACKET}}</span>」級距）
       </p>
 
       <p class="pyramid-quote">
-        <span id="cheer-quote"></span>
+        <span id="cheer-quote">{{CHEER_QUOTE}}</span>
       </p>
 
       <h3 class="section-title">持股金字塔</h3>
-      <div id="pyramid-chart" class="pyramid-chart"></div>
+      <div id="pyramid-chart" class="pyramid-chart">{{PYRAMID_CHART}}</div>
 
       <div class="table-scroll">
         <table id="bracket-table">
@@ -122,8 +122,8 @@
               <th>佔比%</th>
             </tr>
           </thead>
-          <tbody></tbody>
-          <tfoot></tfoot>
+          <tbody>{{BRACKET_ROWS}}</tbody>
+          <tfoot>{{TOTAL_ROW}}</tfoot>
         </table>
       </div>
 

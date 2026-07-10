@@ -1,18 +1,25 @@
 const express = require("express");
 const axios = require("axios");
 const cheerio = require("cheerio");
+const fs = require("fs");
 const path = require("path");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 // TDCC only publishes a new 股權分散表 once a week, so there is no point
-// re-scraping twsthr on every request. Cache each ticker's parsed result
-// in memory and reuse it until it goes stale.
+// re-fetching it on every request. Cache each ticker's parsed result in
+// memory and reuse it until it goes stale.
 const CACHE_TTL_MS = Number(process.env.CACHE_TTL_MS) || 6 * 60 * 60 * 1000; // 6 hours
 const distributionCache = new Map(); // stockCode -> { data, fetchedAt }
 
-app.use(express.static(path.join(__dirname, "public")));
+const PUBLIC_DIR = path.join(__dirname, "public");
+const INDEX_HTML_PATH = path.join(PUBLIC_DIR, "index.html");
+
+// The homepage's default example query — shown pre-rendered so both first-
+// time visitors and search engine crawlers see real content immediately,
+// instead of an empty shell that only fills in after a client-side fetch.
+const DEFAULT_EXAMPLE = { stock: "0050", lots: 10 };
 
 // Bracket definitions in the order they appear on norway.twsthr.info, each
 // with [lower, upper) bound in 張 (lots) used for within-bracket interpolation.
@@ -206,6 +213,170 @@ function estimateRank(brackets, total, userLots) {
     percentileRangeHigh: (rankRangeHigh / N) * 100,
   };
 }
+
+function fmt(n) {
+  return Number(n).toLocaleString("zh-TW");
+}
+
+// Mirrors public/app.js's renderPyramidChart(): bars are sized by each
+// bracket's CUMULATIVE count (tip -> base) on a log scale, since raw counts
+// span a few hundred to a few million. Keep in sync with the client version
+// if that rendering logic changes.
+function renderPyramidChartHtml(pyramid, ownBracketLabel) {
+  const logCumulative = pyramid.map((b) => Math.log10(Math.max(b.cumulative, 1)));
+  const minLog = Math.min(...logCumulative);
+  const maxLog = Math.max(...logCumulative);
+  const range = maxLog - minLog || 1;
+  const MIN_WIDTH_PCT = 6;
+
+  return pyramid
+    .map((b, i) => {
+      const isOwn = b.label === ownBracketLabel;
+      const widthPct =
+        MIN_WIDTH_PCT + ((logCumulative[i] - minLog) / range) * (100 - MIN_WIDTH_PCT);
+      return `
+      <div class="pyramid-row${isOwn ? " is-own" : ""}">
+        <div class="pyramid-row-label">${b.label}${isOwn ? " 👈" : ""}</div>
+        <div class="pyramid-bar-track">
+          <div class="pyramid-bar" style="width: ${widthPct.toFixed(1)}%">
+            <span>${fmt(b.cumulative)}</span>
+          </div>
+        </div>
+      </div>`;
+    })
+    .join("");
+}
+
+// Mirrors public/app.js's renderResult() table-building logic.
+function renderBracketTableHtml(pyramid, total, runningTotal, ownBracketLabel) {
+  const rows = pyramid
+    .map((b) => {
+      const isOwn = b.label === ownBracketLabel;
+      const labelCell = isOwn
+        ? `${b.label}<span class="you-badge">你在這裡</span>`
+        : b.label;
+      return `
+      <tr${isOwn ? ' class="highlight-row"' : ""}>
+        <td>${labelCell}</td>
+        <td>${fmt(b.count)}</td>
+        <td>${fmt(b.cumulative)}</td>
+        <td>${fmt(b.lots)}</td>
+        <td>${b.pct.toFixed(2)}</td>
+      </tr>`;
+    })
+    .join("");
+
+  const totalRow = `
+    <tr class="total-row">
+      <td>合計</td>
+      <td>${fmt(total.count)}</td>
+      <td>${fmt(runningTotal)}</td>
+      <td>${fmt(total.lots)}</td>
+      <td>${total.pct.toFixed(2)}</td>
+    </tr>`;
+
+  return { rows, totalRow };
+}
+
+// Builds the token -> replacement map for the homepage template. `data` is
+// the same shape returned by GET /api/rank, or null to render the empty
+// (JS-populated-on-query) state — used as a fallback if the example query
+// itself fails to fetch.
+function buildResultFragments(data) {
+  if (!data) {
+    return {
+      RESULT_HIDDEN_CLASS: "hidden",
+      RESULT_TITLE: "",
+      CACHE_NOTE: "",
+      CHEER_ENCOURAGEMENT: "",
+      RANK_POINT: "",
+      RANK_TOTAL: "",
+      RANK_PERCENTILE: "",
+      GAUGE_LEFT: "50",
+      GAUGE_VALUE: "",
+      RANK_RANGE_LOW: "",
+      RANK_RANGE_HIGH: "",
+      OWN_BRACKET: "",
+      CHEER_QUOTE: "",
+      PYRAMID_CHART: "",
+      BRACKET_ROWS: "",
+      TOTAL_ROW: "",
+    };
+  }
+
+  const { stock, lots, statDate, brackets, total, rank } = data;
+
+  let runningTotal = 0;
+  const pyramid = [...brackets].reverse().map((b) => {
+    runningTotal += b.count;
+    return { ...b, cumulative: runningTotal };
+  });
+
+  const { rows, totalRow } = renderBracketTableHtml(
+    pyramid,
+    total,
+    runningTotal,
+    rank.ownBracketLabel,
+  );
+  const gaugeLeft = Math.min(97, Math.max(3, rank.percentileEstimate));
+
+  return {
+    RESULT_HIDDEN_CLASS: "",
+    RESULT_TITLE: `範例：${stock}｜持有 ${fmt(lots)} 張（統計日期：${statDate}）`,
+    CACHE_NOTE: "資料為即時抓取",
+    CHEER_ENCOURAGEMENT: "你已經很棒了，繼續前進！",
+    RANK_POINT: `第 ${fmt(rank.rankEstimate)} 名`,
+    RANK_TOTAL: fmt(rank.N),
+    RANK_PERCENTILE: `前 ${rank.percentileEstimate.toFixed(2)}%`,
+    GAUGE_LEFT: gaugeLeft.toFixed(1),
+    GAUGE_VALUE: `前 ${rank.percentileEstimate.toFixed(2)}%`,
+    RANK_RANGE_LOW: fmt(rank.rankRangeLow),
+    RANK_RANGE_HIGH: fmt(rank.rankRangeHigh),
+    OWN_BRACKET: rank.ownBracketLabel,
+    CHEER_QUOTE: "「時間在市場裡，比抓時機更重要」",
+    PYRAMID_CHART: renderPyramidChartHtml(pyramid, rank.ownBracketLabel),
+    BRACKET_ROWS: rows,
+    TOTAL_ROW: totalRow,
+  };
+}
+
+function renderIndexHtml(data) {
+  const template = fs.readFileSync(INDEX_HTML_PATH, "utf8");
+  const fragments = buildResultFragments(data);
+  return Object.keys(fragments).reduce(
+    (html, token) => html.split(`{{${token}}}`).join(fragments[token]),
+    template,
+  );
+}
+
+// Pre-render the homepage with a real default example (0050, 10張) so
+// first-time visitors AND search engine crawlers see actual content instead
+// of an empty shell that only fills in after a client-side fetch/click.
+// Falls back to the plain empty-state template if the example fetch fails,
+// so the page still loads even when the upstream data source is down.
+app.get(["/", "/index.html"], async (req, res) => {
+  try {
+    const { statDate, brackets, total } = await getDistribution(
+      DEFAULT_EXAMPLE.stock,
+      false,
+    );
+    const rank = estimateRank(brackets, total, DEFAULT_EXAMPLE.lots);
+    const html = renderIndexHtml({
+      stock: DEFAULT_EXAMPLE.stock,
+      lots: DEFAULT_EXAMPLE.lots,
+      statDate,
+      brackets,
+      total,
+      rank,
+    });
+    res.type("html").send(html);
+  } catch (err) {
+    console.error("SSR homepage render failed, serving empty-state fallback:", err.message);
+    res.type("html").send(renderIndexHtml(null));
+  }
+});
+
+app.use(express.static(PUBLIC_DIR));
 
 app.get("/api/rank", async (req, res) => {
   try {
