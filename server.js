@@ -7,6 +7,12 @@ const path = require("path");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Render sits in front of this app as a reverse proxy — without trusting
+// it, req.ip would be Render's internal proxy address for every request,
+// making the per-IP rate limit below either block everyone together or
+// nobody at all.
+app.set("trust proxy", true);
+
 // TDCC only publishes a new 股權分散表 once a week, so there is no point
 // re-fetching it on every request. Cache each ticker's parsed result in
 // memory and reuse it until it goes stale.
@@ -174,15 +180,29 @@ async function fetchQuote(stockCode) {
   };
 }
 
+// Price moves during the trading day but not fast enough to justify a fresh
+// TWSE hit on every single request — a short cache cuts a lot of redundant
+// outbound traffic (every /api/rank call AND every homepage load would
+// otherwise hit TWSE, even seconds apart or after market close).
+const QUOTE_CACHE_TTL_MS = Number(process.env.QUOTE_CACHE_TTL_MS) || 30 * 1000; // 30s
+const quoteCache = new Map(); // stockCode -> { data, fetchedAt }
+
 // Price is a nice-to-have on top of the rank estimate, not core to it — a
 // flaky quote endpoint shouldn't take down the whole /api/rank response.
 async function getQuoteSafe(stockCode) {
+  const cached = quoteCache.get(stockCode);
+  if (cached && Date.now() - cached.fetchedAt < QUOTE_CACHE_TTL_MS) {
+    return cached.data;
+  }
+
+  let data = null;
   try {
-    return await fetchQuote(stockCode);
+    data = await fetchQuote(stockCode);
   } catch (err) {
     console.error(`quote fetch failed for ${stockCode}:`, err.message);
-    return null;
   }
+  quoteCache.set(stockCode, { data, fetchedAt: Date.now() });
+  return data;
 }
 
 async function getDistribution(stockCode, forceRefresh) {
@@ -240,9 +260,16 @@ function estimateRank(brackets, total, userLots) {
   );
 
   const N = total.count;
-  const rankEstimate = Math.round(superiorCount + peopleAboveInBracket + 1);
   const rankRangeLow = superiorCount + 1;
   const rankRangeHigh = superiorCount + ownBracket.count;
+  // Clamp: the interpolated point estimate can round to one past
+  // rankRangeHigh at the very edge of the open-ended top bracket (Pareto
+  // tail approaches but never quite reaches ownBracket.count), which would
+  // otherwise put the point estimate outside the range it's presented with.
+  const rankEstimate = Math.min(
+    rankRangeHigh,
+    Math.max(rankRangeLow, Math.round(superiorCount + peopleAboveInBracket + 1)),
+  );
 
   return {
     N,
@@ -471,6 +498,42 @@ function renderIndexHtml(data) {
   );
 }
 
+// Lightweight in-memory per-IP rate limit for the endpoints that trigger
+// outbound requests to TDCC/TWSE. Getting the app's one outbound IP
+// re-blocked upstream (the exact problem that forced the
+// norway.twsthr.info -> TDCC migration) is a bigger risk than a determined
+// abuser working around a simple in-memory limiter.
+const RATE_LIMIT_WINDOW_MS = 60 * 1000;
+const RATE_LIMIT_MAX = Number(process.env.RATE_LIMIT_MAX) || 20;
+const rateLimitHits = new Map(); // ip -> { count, windowStart }
+
+function rateLimit(req, res, next) {
+  const ip = req.ip;
+  const now = Date.now();
+  const entry = rateLimitHits.get(ip);
+
+  if (!entry || now - entry.windowStart >= RATE_LIMIT_WINDOW_MS) {
+    rateLimitHits.set(ip, { count: 1, windowStart: now });
+    return next();
+  }
+
+  entry.count += 1;
+  if (entry.count > RATE_LIMIT_MAX) {
+    return res.status(429).json({ error: "查詢太頻繁，請稍後再試" });
+  }
+  next();
+}
+
+// Without this, rateLimitHits would grow forever — every distinct IP that
+// has ever made a request stays in the map, since entries are only reset
+// (not deleted) once their window rolls over.
+setInterval(() => {
+  const now = Date.now();
+  for (const [ip, entry] of rateLimitHits) {
+    if (now - entry.windowStart >= RATE_LIMIT_WINDOW_MS) rateLimitHits.delete(ip);
+  }
+}, 5 * 60 * 1000).unref();
+
 // Pre-render the homepage with a real default example (0050, 10張) so
 // first-time visitors AND search engine crawlers see actual content instead
 // of an empty shell that only fills in after a client-side fetch/click.
@@ -501,7 +564,7 @@ app.get(["/", "/index.html"], async (req, res) => {
 
 app.use(express.static(PUBLIC_DIR));
 
-app.get("/api/rank", async (req, res) => {
+app.get("/api/rank", rateLimit, async (req, res) => {
   try {
     const stock = String(req.query.stock || "").trim().toUpperCase();
     const lots = Number(req.query.lots);
@@ -535,17 +598,37 @@ app.get("/api/rank", async (req, res) => {
   }
 });
 
-// Manual cache bust for a single ticker, or the whole cache if no stock given.
-app.post("/api/cache/clear", express.json(), (req, res) => {
+// Manual cache bust for a single ticker, or the whole cache if no stock
+// given. Disabled unless CACHE_CLEAR_TOKEN is set — this endpoint lets
+// anyone force a fresh round of TDCC/TWSE requests, so it must not be open
+// by default.
+app.post("/api/cache/clear", rateLimit, express.json(), (req, res) => {
+  const configuredToken = process.env.CACHE_CLEAR_TOKEN;
+  if (!configuredToken) {
+    return res.status(403).json({ error: "此端點未啟用" });
+  }
+  const providedToken = req.get("x-cache-clear-token") || req.query.token;
+  if (providedToken !== configuredToken) {
+    return res.status(401).json({ error: "未授權" });
+  }
+
   const stock = String((req.body && req.body.stock) || "").trim().toUpperCase();
   if (stock) {
     distributionCache.delete(stock);
+    quoteCache.delete(stock);
   } else {
     distributionCache.clear();
+    quoteCache.clear();
   }
   res.json({ ok: true, cleared: stock || "all" });
 });
 
-app.listen(PORT, () => {
-  console.log(`holder-rank server running at http://localhost:${PORT}`);
-});
+// Guarded so requiring this file from a test (to reach estimateRank etc.
+// without duplicating the ranking logic) doesn't also start a live server.
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`holder-rank server running at http://localhost:${PORT}`);
+  });
+}
+
+module.exports = { estimateRank, BRACKET_ORDER };
