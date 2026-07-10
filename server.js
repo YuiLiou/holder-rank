@@ -705,6 +705,11 @@ app.get("/api/rank", rateLimit, async (req, res) => {
       return res.status(400).json({ error: "請提供有效的持股張數" });
     }
 
+    // Usage visibility only — Render's Logs tab captures this stdout line
+    // (retention depends on plan). Logged after validation so junk/bot
+    // requests with empty or non-numeric input don't pollute it.
+    console.log(`[rank] ip=${req.ip} stock=${stock} lots=${lots}`);
+
     const [{ statDate, brackets, total, fromCache, cachedAt }, quote] = await Promise.all([
       getDistribution(stock, forceRefresh),
       getQuoteSafe(stock),
