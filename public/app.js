@@ -355,6 +355,255 @@ function renderCacheNote(cache, queryStock, queryLots) {
 // "累計人數" column in the table below. A log scale is used for the width
 // because cumulative counts still span a few hundred (tip) to a few million
 // (base); linear would make everything but the base invisible.
+// ---------------------------------------------------------------------
+// Share card — renders the current tier verdict as a downloadable /
+// shareable PNG via <canvas>. Re-derives the tier from
+// SHAREHOLDER_TIERS/getTier off the percentile in the DOM (#rank-percentile)
+// rather than parsing the already-formatted grade/quote text, so this works
+// identically for the SSR default homepage and a live query result — both
+// populate the same #tier-card/#rank-percentile ids.
+// ---------------------------------------------------------------------
+const TIER_TONE_GRADIENTS = {
+  gold: ["#b45309", "#f59e0b"],
+  indigo: ["#3730a3", "#6366f1"],
+  teal: ["#0f766e", "#14b8a6"],
+  sky: ["#0369a1", "#0ea5e9"],
+  slate: ["#334155", "#64748b"],
+};
+
+const SHARE_FONT =
+  '"PingFang TC", "Microsoft JhengHei", -apple-system, BlinkMacSystemFont, sans-serif';
+
+function roundRectPath(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+
+// Wraps by individual character rather than by word — correct for CJK text,
+// which has no spaces to break on. Closing punctuation is never allowed to
+// start a new line (kinsoku shori) — it's let to slightly overflow the
+// previous line instead of dangling alone.
+const NO_LINE_START_PUNCTUATION = new Set([
+  "，", "。", "、", "！", "？", "」", "』", "）", "：", "；", ")", "]",
+]);
+
+function wrapCjkText(ctx, text, maxWidth) {
+  const chars = Array.from(text);
+  const lines = [];
+  let line = "";
+  chars.forEach((ch) => {
+    const test = line + ch;
+    if (line && ctx.measureText(test).width > maxWidth && !NO_LINE_START_PUNCTUATION.has(ch)) {
+      lines.push(line);
+      line = ch;
+    } else {
+      line = test;
+    }
+  });
+  if (line) lines.push(line);
+  return lines;
+}
+
+function getSharePercentile() {
+  const text = document.getElementById("rank-percentile").textContent;
+  const match = text.match(/[\d.]+/);
+  return match ? parseFloat(match[0]) : 0;
+}
+
+function buildShareCanvas() {
+  const percentile = getSharePercentile();
+  const tier = getTier(percentile);
+  const tierIndex = SHAREHOLDER_TIERS.indexOf(tier);
+  const beatPct = Math.max(0, 100 - percentile).toFixed(2);
+
+  // "0050｜持有 10 張（統計日期：...）" -> "0050｜持有 10 張"; drop the
+  // date/example-prefix so the pill stays short enough to never overflow.
+  const rawSubtitle = document.getElementById("result-title").textContent.trim();
+  const subtitle = rawSubtitle.replace(/^範例：/, "").split("（")[0].trim();
+
+  const [c1, c2] = TIER_TONE_GRADIENTS[tier.tone] || TIER_TONE_GRADIENTS.slate;
+
+  const W = 1080;
+  const H = 1350;
+  const PAD = 76;
+  const maxTextWidth = W - PAD * 2;
+
+  const canvas = document.createElement("canvas");
+  canvas.width = W;
+  canvas.height = H;
+  const ctx = canvas.getContext("2d");
+
+  // Background gradient mirrors .tier-card--<tone> in style.css.
+  const bg = ctx.createLinearGradient(0, 0, W, H);
+  bg.addColorStop(0, c1);
+  bg.addColorStop(1, c2);
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, W, H);
+
+  ctx.fillStyle = "#fff";
+  ctx.textBaseline = "alphabetic";
+
+  // Header: eyebrow + site mark (mirrors .tier-eyebrow)
+  ctx.font = `600 26px ${SHARE_FONT}`;
+  ctx.globalAlpha = 0.85;
+  ctx.textAlign = "left";
+  ctx.fillText("大戶等級評定", PAD, 100);
+  ctx.textAlign = "right";
+  ctx.fillText("holder-rank", W - PAD, 100);
+  ctx.globalAlpha = 1;
+
+  // Grade + title (mirrors .tier-grade / .tier-name)
+  ctx.textAlign = "center";
+  ctx.font = `800 240px ${SHARE_FONT}`;
+  ctx.fillText(tier.grade, W / 2, 400);
+
+  ctx.font = `800 58px ${SHARE_FONT}`;
+  ctx.fillText(tier.title, W / 2, 468);
+
+  // Subtitle pill (stock + lots)
+  ctx.font = `600 26px ${SHARE_FONT}`;
+  const pillPaddingX = 22;
+  const pillWidth = Math.min(maxTextWidth, ctx.measureText(subtitle).width + pillPaddingX * 2);
+  const pillHeight = 48;
+  const pillX = W / 2 - pillWidth / 2;
+  const pillY = 506;
+  ctx.fillStyle = "rgba(255, 255, 255, 0.16)";
+  roundRectPath(ctx, pillX, pillY, pillWidth, pillHeight, pillHeight / 2);
+  ctx.fill();
+  ctx.fillStyle = "#fff";
+  ctx.fillText(subtitle, W / 2, pillY + 32);
+
+  // Beat statement (mirrors .reveal hero)
+  ctx.font = `700 46px ${SHARE_FONT}`;
+  ctx.fillText(`持股贏過全體股東 ${beatPct}%`, W / 2, 640);
+
+  // Mini ladder (mirrors .tier-ladder / .rung)
+  const rungs = [...SHAREHOLDER_TIERS].reverse();
+  const currentPos = SHAREHOLDER_TIERS.length - 1 - tierIndex;
+  const ladderY = 682;
+  const ladderH = 44;
+  const gap = 8;
+  const rungW = (maxTextWidth - gap * (rungs.length - 1)) / rungs.length;
+  ctx.font = `700 20px ${SHARE_FONT}`;
+  rungs.forEach((t, i) => {
+    const x = PAD + i * (rungW + gap);
+    roundRectPath(ctx, x, ladderY, rungW, ladderH, 8);
+    if (i === currentPos) ctx.fillStyle = "#ffffff";
+    else if (i < currentPos) ctx.fillStyle = "rgba(255, 255, 255, 0.35)";
+    else ctx.fillStyle = "rgba(255, 255, 255, 0.16)";
+    ctx.fill();
+    ctx.fillStyle = i === currentPos ? "#1f2937" : "rgba(255, 255, 255, 0.9)";
+    ctx.fillText(t.grade, x + rungW / 2, ladderY + 29);
+  });
+
+  // Evaluation + encouragement, wrapped (mirrors .tier-eval / .tier-cheer)
+  ctx.textAlign = "left";
+  ctx.fillStyle = "#fff";
+  ctx.globalAlpha = 0.96;
+  let y = 792;
+  ctx.font = `400 32px ${SHARE_FONT}`;
+  wrapCjkText(ctx, tier.evaluation, maxTextWidth).forEach((line) => {
+    ctx.fillText(line, PAD, y);
+    y += 46;
+  });
+
+  y += 12;
+  ctx.font = `700 32px ${SHARE_FONT}`;
+  wrapCjkText(ctx, tier.encouragement, maxTextWidth).forEach((line) => {
+    ctx.fillText(line, PAD, y);
+    y += 46;
+  });
+  ctx.globalAlpha = 1;
+
+  // Quote, pinned near the bottom with a divider (mirrors .tier-quote)
+  const quoteY = H - 160;
+  ctx.strokeStyle = "rgba(255, 255, 255, 0.35)";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(PAD, quoteY - 40);
+  ctx.lineTo(W - PAD, quoteY - 40);
+  ctx.stroke();
+
+  ctx.font = `italic 400 28px ${SHARE_FONT}`;
+  ctx.globalAlpha = 0.92;
+  let qy = quoteY;
+  wrapCjkText(ctx, `「${tier.quote}」－ ${tier.author}`, maxTextWidth).forEach((line) => {
+    ctx.fillText(line, PAD, qy);
+    qy += 40;
+  });
+  ctx.globalAlpha = 1;
+
+  // Footer branding
+  ctx.textAlign = "center";
+  ctx.font = `600 24px ${SHARE_FONT}`;
+  ctx.globalAlpha = 0.85;
+  ctx.fillText("holder-rank.onrender.com ｜ 台股股東排行榜", W / 2, H - 50);
+  ctx.globalAlpha = 1;
+
+  return canvas;
+}
+
+const shareCardBtn = document.getElementById("share-card-btn");
+const shareModal = document.getElementById("share-modal");
+const shareCardImg = document.getElementById("share-card-img");
+const shareDownloadBtn = document.getElementById("share-download-btn");
+const shareNativeBtn = document.getElementById("share-native-btn");
+
+let shareCardBlob = null;
+
+function openShareModal() {
+  const canvas = buildShareCanvas();
+  shareCardImg.src = canvas.toDataURL("image/png");
+  shareModal.classList.remove("hidden");
+  canvas.toBlob((blob) => {
+    shareCardBlob = blob;
+  }, "image/png");
+}
+
+function closeShareModal() {
+  shareModal.classList.add("hidden");
+}
+
+shareCardBtn.addEventListener("click", openShareModal);
+document.getElementById("share-modal-backdrop").addEventListener("click", closeShareModal);
+document.getElementById("share-modal-close").addEventListener("click", closeShareModal);
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && !shareModal.classList.contains("hidden")) closeShareModal();
+});
+
+shareDownloadBtn.addEventListener("click", () => {
+  const link = document.createElement("a");
+  link.href = shareCardImg.src;
+  link.download = "大戶等級評定.png";
+  link.click();
+});
+
+// Web Share API (mobile browsers, mainly) lets the user share the image
+// straight into another app instead of only downloading it first.
+if (navigator.share && navigator.canShare) {
+  shareNativeBtn.classList.remove("hidden");
+}
+
+shareNativeBtn.addEventListener("click", async () => {
+  if (!shareCardBlob) return;
+  const file = new File([shareCardBlob], "大戶等級評定.png", { type: "image/png" });
+  if (!navigator.canShare({ files: [file] })) return;
+  try {
+    await navigator.share({
+      files: [file],
+      title: "大戶等級評定",
+      text: "來測測看你的大戶等級！",
+    });
+  } catch (err) {
+    // User cancelled the native share sheet — nothing to do.
+  }
+});
+
 function renderPyramidChart(pyramid, ownBracketLabel) {
   const container = document.getElementById("pyramid-chart");
   container.innerHTML = "";

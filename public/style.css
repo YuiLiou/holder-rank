@@ -669,6 +669,32 @@ button:disabled {
   opacity: 0.9;
 }
 
+/* Ghost button on the tier-card's own gradient rather than the page's
+   --gold button — it needs to read against five different saturated
+   backgrounds, so it stays a translucent-white outline instead of a
+   themed fill (same reasoning as .tier-upgrade above it). */
+.tier-share-btn {
+  display: block;
+  width: 100%;
+  margin-top: 14px;
+  padding: 11px 16px;
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.tier-share-btn:hover {
+  background: rgba(255, 255, 255, 0.26);
+}
+
+.tier-share-btn:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+
 @media (max-width: 480px) {
   .tier-card {
     padding: 16px 16px;
@@ -840,4 +866,99 @@ tr.total-row td {
   .gauge-marker {
     transition: none;
   }
+}
+
+/* Share-card preview modal — a lightweight fixed overlay (this app has no
+   other modal, so nothing to reuse) showing the canvas-rendered PNG before
+   the user downloads/shares it, rather than triggering a download blind. */
+.share-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.share-modal.hidden {
+  display: none;
+}
+
+.share-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.6);
+}
+
+.share-modal-panel {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 380px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  background: var(--card);
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: var(--shadow-lg);
+}
+
+.share-modal-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--card-2);
+  color: var(--ink-soft);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font-size: 14px;
+  line-height: 1;
+}
+
+.share-modal-close:hover {
+  background: var(--line);
+}
+
+.share-modal-preview {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  border-radius: 12px;
+  background: var(--card-2);
+  border: 1px solid var(--line);
+}
+
+.share-modal-preview img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 12px;
+}
+
+.share-modal-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.share-modal-actions button {
+  flex: 1;
+}
+
+#share-native-btn {
+  background: var(--card-2);
+  color: var(--ink);
+  border: 1px solid var(--line-strong);
+}
+
+#share-native-btn:hover {
+  background: var(--line);
 }

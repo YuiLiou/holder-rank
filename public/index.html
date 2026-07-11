@@ -137,6 +137,10 @@
           <p class="tier-cheer" id="tier-cheer">{{TIER_ENCOURAGEMENT}}</p>
           <div class="tier-upgrade" id="tier-upgrade">{{TIER_UPGRADE_HTML}}</div>
           <p class="tier-quote" id="tier-quote">{{TIER_QUOTE}}</p>
+
+          <button type="button" class="tier-share-btn" id="share-card-btn">
+            分享圖卡
+          </button>
         </div>
       </section>
 
@@ -171,6 +175,20 @@
         <li>「1,000張以上」無上界，改用冪律（Pareto）近似估算，張數越極端誤差可能越大。</li>
         <li>僅適用於已在集保結算所登記的上市櫃股票／ETF，興櫃或未上市個股不適用。</li>
       </ul>
+    </div>
+  </div>
+
+  <div class="share-modal hidden" id="share-modal" role="dialog" aria-modal="true" aria-label="分享圖卡">
+    <div class="share-modal-backdrop" id="share-modal-backdrop"></div>
+    <div class="share-modal-panel">
+      <button type="button" class="share-modal-close" id="share-modal-close" aria-label="關閉">✕</button>
+      <div class="share-modal-preview">
+        <img id="share-card-img" alt="大戶等級評定分享圖卡" />
+      </div>
+      <div class="share-modal-actions">
+        <button type="button" id="share-download-btn">下載圖片</button>
+        <button type="button" id="share-native-btn" class="hidden">分享</button>
+      </div>
     </div>
   </div>
 

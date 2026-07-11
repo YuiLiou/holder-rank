@@ -20,7 +20,9 @@
       "WebSearch",
       "Skill(artifact-design)",
       "Artifact",
-      "Skill(run)"
+      "Skill(run)",
+      "Skill(update-config)",
+      "Bash(sips -g pixelWidth -g pixelHeight ~/Downloads/大戶等級評定.png)"
     ]
   }
 }
