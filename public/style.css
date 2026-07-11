@@ -111,9 +111,16 @@ h1 {
 }
 
 .subtitle {
-  margin: 0 0 24px;
+  margin: 0 0 6px;
   color: var(--ink-soft);
   font-size: 14px;
+  line-height: 1.6;
+}
+
+.intro {
+  margin: 0 0 24px;
+  color: var(--ink-faint);
+  font-size: 13px;
   line-height: 1.6;
 }
 
@@ -124,6 +131,11 @@ h1 {
 
   .subtitle {
     font-size: 13px;
+    margin-bottom: 6px;
+  }
+
+  .intro {
+    font-size: 12px;
     margin-bottom: 18px;
   }
 }

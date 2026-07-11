@@ -19,7 +19,8 @@
       "Bash(npm install *)",
       "WebSearch",
       "Skill(artifact-design)",
-      "Artifact"
+      "Artifact",
+      "Skill(run)"
     ]
   }
 }
