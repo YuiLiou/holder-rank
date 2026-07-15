@@ -862,6 +862,54 @@ tr.total-row td {
   border-top: 1px solid var(--line);
 }
 
+/* Cross-promo for the sibling app — sits outside #result so it renders on
+   every page load regardless of query/SSR-fallback state. Uses the same
+   gold-soft treatment as .chip (friendly, not alarming) rather than the
+   page's plain --gold button, since this is a suggestion, not an action
+   tied to the ranking result above it. */
+.promo-footer {
+  margin-top: 20px;
+  padding: 14px 16px;
+  background: var(--gold-soft-bg);
+  border: 1px solid var(--gold-soft-border);
+  border-radius: 12px;
+}
+
+.promo-footer p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--gold-soft-ink);
+}
+
+.promo-footer a {
+  color: var(--gold-strong);
+  font-weight: 700;
+  text-decoration: underline;
+  text-decoration-color: var(--gold-soft-border);
+  text-underline-offset: 2px;
+}
+
+.promo-footer a:hover {
+  text-decoration-color: currentColor;
+}
+
+.promo-footer a:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+
+@media (max-width: 480px) {
+  .promo-footer {
+    margin-top: 16px;
+    padding: 12px 14px;
+  }
+
+  .promo-footer p {
+    font-size: 12px;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .gauge-marker {
     transition: none;
