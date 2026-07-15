@@ -16,7 +16,7 @@
   的概略市值。
 - **持股金字塔圖表**與完整級距表。
 
-線上版本：https://holder-rank.onrender.com（部署在 Render 免費方案，閒置
+線上版本：<https://holder-rank.onrender.com>（部署在 Render 免費方案，閒置
 一段時間後會休眠，第一次造訪可能要等幾十秒喚醒）。
 
 ## Project setup
