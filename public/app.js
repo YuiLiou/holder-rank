@@ -454,7 +454,7 @@ function buildShareCanvas() {
   ctx.textAlign = "left";
   ctx.fillText("大戶等級評定", PAD, 100);
   ctx.textAlign = "right";
-  ctx.fillText("holder-rank", W - PAD, 100);
+  ctx.fillText("大戶指數", W - PAD, 100);
   ctx.globalAlpha = 1;
 
   // Grade + title (mirrors .tier-grade / .tier-name)
@@ -542,7 +542,7 @@ function buildShareCanvas() {
   ctx.textAlign = "center";
   ctx.font = `600 24px ${SHARE_FONT}`;
   ctx.globalAlpha = 0.85;
-  ctx.fillText("holder-rank.onrender.com ｜ 台股股東排行榜", W / 2, H - 50);
+  ctx.fillText("大戶指數 ｜ holder-rank.onrender.com", W / 2, H - 50);
   ctx.globalAlpha = 1;
 
   return canvas;

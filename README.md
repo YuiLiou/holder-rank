@@ -1,4 +1,4 @@
-# holder-rank
+# 大戶指數
 
 估算台股股東持股張數在全體股東中的排名。資料來源為台灣集中保管結算所
 （TDCC）每週公布的**集保股權分散表**，直接向 TDCC 官方查詢系統
@@ -430,9 +430,9 @@ TDCC 的股權分散表一週才更新一次，沒必要每次查詢都重新打
 
 - `<title>`、`meta description`、`canonical` URL。標題／`h1`／
   `meta description`／`og:description`／`twitter:description` 都帶著
-  「大戶指數」這個關鍵字——沒有另外加 `<meta name="keywords">`，因為
-  Google／Bing 早已不採用這個標籤做排名依據，關鍵字要出現在標題與描述這類
-  真正會被爬蟲讀取權重的地方才有效。
+  「大戶指數」——這既是產品名稱，也是主打的 SEO 關鍵字。沒有另外加
+  `<meta name="keywords">`，因為 Google／Bing 早已不採用這個標籤做排名依據，
+  關鍵字要出現在標題與描述這類真正會被爬蟲讀取權重的地方才有效。
 - Open Graph（`og:title`／`og:description`／`og:type`／`og:url`／
   `og:locale`）與 Twitter Card 標籤，讓分享連結時有正確的標題與描述。
 - `google-site-verification` meta 標籤，用於驗證 Google Search Console
