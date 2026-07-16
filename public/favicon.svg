@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- Rounded square in the tier-card gold gradient (style.css), so the
+       favicon reads as "this app" at a glance and stays visually distinct
+       from portfolio-keeper's green favicon when both tabs are open. -->
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#b45309"/>
+      <stop offset="1" stop-color="#f59e0b"/>
+    </linearGradient>
+  </defs>
+  <rect width="32" height="32" rx="7" fill="url(#g)"/>
+  <!-- Stacked bars echo the app's own holder-pyramid chart (wide base of
+       retail holders narrowing to a small top of whales). Opacity rises
+       toward the top bar instead of the usual base-heavy emphasis, so the
+       eye lands on the "大戶" tier being climbed toward, not the crowd. -->
+  <rect x="6" y="21" width="20" height="4" rx="1.5" fill="#fff" fill-opacity="0.55"/>
+  <rect x="8.5" y="16" width="15" height="4" rx="1.5" fill="#fff" fill-opacity="0.72"/>
+  <rect x="11" y="11" width="10" height="4" rx="1.5" fill="#fff" fill-opacity="0.88"/>
+  <rect x="13.5" y="6" width="5" height="4" rx="1.5" fill="#fff"/>
+</svg>
